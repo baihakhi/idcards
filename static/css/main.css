@@ -1,0 +1,92 @@
+.main-container {
+  display: flex;
+  justify-content: space-around;
+}
+
+.split-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  max-width: 934px;
+}
+
+.left-container {
+  width: 50%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.left-container > input {
+  height: 20px;
+  font-size: large;
+}
+
+.user-banner {
+  font-weight: 600;
+  display: inline;
+  font-size: large;
+}
+
+.user-banner > .user-id {
+  font-weight: 600;
+  display: inline;
+}
+
+.dropdown {
+  font-size: large;
+}
+
+.dropdown select {
+  font-size: medium;
+}
+
+.user-list {
+  width: 50%;
+}
+
+.user-list .list {
+  display: flex;
+  flex-flow: wrap;
+  justify-content: right;
+  column-gap: 30px;
+  row-gap: 10px;
+}
+
+.list div {
+  display: inline;
+  border: 1px solid gray;
+  width: 170px;
+}
+
+.list div p {
+  margin: 0;
+}
+
+.video-container {
+  height: 450px;
+  width: 330px;
+  border: 2px solid gray;
+  border-radius: 10px;
+}
+
+.video-container video {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+
+@media only screen and (max-width: 1000px) {
+  .main-container {
+    flex-direction: column;
+  }
+}
+
+body {
+  text-align: center;
+  padding: 10px;
+}
+
+form {
+  width: 50%;
+}

@@ -1,0 +1,14 @@
+// TODO
+
+html
+	user card
+		limit user name
+		change nik -> userID
+
+go
+    index
+        init userID
+    generateID
+        change address alignment
+
+M ALIMU KHOEDLORI

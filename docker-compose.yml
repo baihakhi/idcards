@@ -1,0 +1,12 @@
+version: "3.8"
+
+services:
+  idcard-app:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./static/uploads:/app/static/uploads
+      - ./cards/idcards:/app/cards/idcards
+      - ./data:/app/data
+    restart: unless-stopped

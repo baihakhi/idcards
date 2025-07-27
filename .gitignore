@@ -2,3 +2,7 @@ cards/
 pdf/
 tester/
 static/uploads/
+data/
+
+*.xlsx
+*.txt

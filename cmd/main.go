@@ -14,33 +14,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jung-kurt/gofpdf"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/xuri/excelize/v2"
-
-	"image"
-	"image/color"
-	"image/draw"
-	"image/png"
-
-	"golang.org/x/image/font"
-	"golang.org/x/image/font/opentype"
-	"golang.org/x/image/math/fixed"
 )
-
-type User struct {
-	ID    string
-	Status string
-	NIK string
-	Name  string
-	Phone string
-	Address string
-	Rating int
-	Notes string
-	Photo string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
 
 type Result struct {
 	NIK     string
@@ -49,14 +25,14 @@ type Result struct {
 }
 
 var (
-	db *sql.DB
+	db   *sql.DB
 	tmpl *template.Template
 )
 
 const (
 	pathToTempl string = "static/assets/"
-	pathToCard string = "cards/idcards/"
-	pathToFont string = "static/assets/fonts/"
+	pathToCard  string = "cards/idcards/"
+	pathToFont  string = "static/assets/fonts/"
 )
 
 func main() {
@@ -81,7 +57,7 @@ func main() {
 	http.HandleFunc("/create", createHandler)
 	http.HandleFunc("/update", updateHandler)
 
-	http.HandleFunc("/upload", func(w http.ResponseWriter, r *http.Request){
+	http.HandleFunc("/upload", func(w http.ResponseWriter, r *http.Request) {
 		tmpl.ExecuteTemplate(w, "upload file.html", nil)
 	})
 	http.HandleFunc("/upload/upsert", uploadHandler)
@@ -127,7 +103,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	users := []User{}
 	uID := "S001"
 	rows, err := db.Query("SELECT id, nik, status, name, phone, address, rating, notes, photo, created_at, updated_at FROM users ORDER BY updated_at DESC LIMIT 15")
-	
+
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -153,21 +129,21 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tmpl.ExecuteTemplate(w, "index.html", map[string]any{
-			"Action": "/create",
-			"Method": "POST",
-			"UserID": uID,
-			"User": users,
-		})
+		"Action": "/create",
+		"Method": "POST",
+		"UserID": uID,
+		"User":   users,
+	})
 }
 
 func getUserHandler(w http.ResponseWriter, r *http.Request) {
 	var u User
-	
+
 	nik := r.URL.Query().Get("nik")
 
 	err := db.QueryRow("SELECT * FROM users WHERE nik = ?", nik).Scan(&u.ID, &u.NIK, &u.Status, &u.Name, &u.Phone, &u.Address, &u.Rating, &u.Notes, &u.Photo, &u.CreatedAt, &u.UpdatedAt)
 	if err != nil {
-	log.Println("err:", err)
+		log.Println("err:", err)
 		json.NewEncoder(w).Encode(map[string]string{"Error": fmt.Sprintf("error getting user of NIK: %s | %s", nik, err.Error())})
 		return
 	}
@@ -195,23 +171,23 @@ func getIdHandler(w http.ResponseWriter, r *http.Request) {
 
 func createHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("create handler")
-	
+
 	if r.Method != http.MethodPost {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
-	nik		:= r.FormValue("nik")
-	name 	:= r.FormValue("name")
-	status 	:= r.FormValue("status")
-	phone 	:= r.FormValue("phone")
+	nik := r.FormValue("nik")
+	name := r.FormValue("name")
+	status := r.FormValue("status")
+	phone := r.FormValue("phone")
 	address := r.FormValue("address")
-	rating 	:= r.FormValue("rating")
+	rating := r.FormValue("rating")
 	if rating == "" {
 		rating = "0"
 	}
 	ratingInt, _ := strconv.Atoi(rating)
-	notes 	:= r.FormValue("notes")
+	notes := r.FormValue("notes")
 	photoData := r.FormValue("photo")
 	userID, err := generateUserID(status)
 	if err != nil {
@@ -220,9 +196,9 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	
+
 	check, errLog := completionCheck(name, nik, photoData, userID, status)
-	if !check{
+	if !check {
 		err := fmt.Errorf("lengkapi data, %s", errLog)
 		tmpl.ExecuteTemplate(w, "index.html", map[string]interface{}{
 			"Error": err.Error(),
@@ -238,8 +214,8 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	os.WriteFile(photoPath, imgBytes, 0644)
 
 	log.Println(name, userID, webPhotoPath)
-	_, err = db.Exec("INSERT INTO users (id, nik, status, name, phone, address, rating, notes, photo)" +
-	"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+	_, err = db.Exec("INSERT INTO users (id, nik, status, name, phone, address, rating, notes, photo)"+
+		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		userID, nik, status, name, phone, address, rating, notes, webPhotoPath)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
@@ -257,15 +233,15 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	u := User{
-		ID: userID,
-		Status: status,
-		NIK: nik,
-		Name: name,
-		Phone: phone,
+		ID:      userID,
+		Status:  status,
+		NIK:     nik,
+		Name:    name,
+		Phone:   phone,
 		Address: address,
-		Rating: ratingInt,
-		Notes: notes,
-		Photo: webPhotoPath,
+		Rating:  ratingInt,
+		Notes:   notes,
+		Photo:   webPhotoPath,
 	}
 
 	err = UpdateExcel(u)
@@ -279,7 +255,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateHandler(w http.ResponseWriter, r *http.Request) {
-	
+
 	log.Println("update handler ", r.Method)
 	if r.Method != http.MethodPost {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -287,21 +263,20 @@ func updateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := r.FormValue("userIdInput")
-	nik		:= r.FormValue("nik")
-	name 	:= r.FormValue("name")
-	status 	:= r.FormValue("status")
-	phone 	:= r.FormValue("phone")
+	nik := r.FormValue("nik")
+	name := r.FormValue("name")
+	status := r.FormValue("status")
+	phone := r.FormValue("phone")
 	address := r.FormValue("address")
-	rating 	:= r.FormValue("rating")
+	rating := r.FormValue("rating")
 	if rating == "" {
 		rating = "1"
 	}
-	notes 	:= r.FormValue("notes")
+	notes := r.FormValue("notes")
 	photoData := r.FormValue("photo")
 
-
 	check, errLog := completionCheck(name, nik, photoData, userID, status)
-	if !check{
+	if !check {
 		err := fmt.Errorf("lengkapi data, %s", errLog)
 		log.Println(err)
 		tmpl.ExecuteTemplate(w, "index.html", map[string]any{
@@ -317,15 +292,15 @@ func updateHandler(w http.ResponseWriter, r *http.Request) {
 	webPhotoPath := strings.ReplaceAll(photoPath, `\`, `/`)
 	os.WriteFile(photoPath, imgBytes, 0644)
 
-	log.Println("file written",name, userID, webPhotoPath)
-	_, err := db.Exec("UPDATE users SET nik=?, status=?, name=?, phone=?, address=?, rating=?, notes=?, photo=? " +
-	"WHERE users.id=?",
+	log.Println("file written", name, userID, webPhotoPath)
+	_, err := db.Exec("UPDATE users SET nik=?, status=?, name=?, phone=?, address=?, rating=?, notes=?, photo=? "+
+		"WHERE users.id=?",
 		nik, status, name, phone, address, rating, notes, webPhotoPath, userID)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
-	
+
 	templatePath := pathToTempl + "kartu.png"
 	outputPath := pathToCard + userID + ".png"
 	err = generateIDCard(templatePath, webPhotoPath, outputPath, normalizeName(name), userID, address)
@@ -406,7 +381,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 				Address: row[5],
 				Rating:  parseInt(row[6]),
 				Notes:   ket,
-				Photo: foto,
+				Photo:   foto,
 			}
 			jobs <- u
 		}
@@ -472,14 +447,6 @@ func userWorker(tx *sql.Tx, jobs <-chan User, results chan<- Result) {
 	}
 }
 
-func parseInt(s string) int {
-	i, err := strconv.Atoi(strings.TrimSpace(s))
-	if err != nil {
-		return 0
-	}
-	return i
-}
-
 func GetUserByNik(nik string) (u User, err error) {
 	err = db.QueryRow("SELECT * FROM users WHERE nik = ?", nik).Scan(&u.ID, &u.NIK, &u.Status, &u.Name, &u.Phone, &u.Address, &u.Rating, &u.Notes, &u.Photo, &u.CreatedAt, &u.UpdatedAt)
 	if err != nil && err != sql.ErrNoRows {
@@ -491,7 +458,7 @@ func GetUserByNik(nik string) (u User, err error) {
 func generateUserID(status string) (string, error) {
 	var (
 		total int
-	) 
+	)
 
 	err := db.QueryRow("SELECT COUNT(id) AS total_user FROM users where status=?", status).Scan(&total)
 	if err != nil {
@@ -502,123 +469,14 @@ func generateUserID(status string) (string, error) {
 	return userID, nil
 }
 
-func generateIDCard(templatePath, photoPath, outputPath, name, userID, alamat string) error {
-	roboto200 := pathToFont + "Roboto/static/Roboto-Light.ttf"
-	roboto400 := pathToFont + "Roboto/static/Roboto-Regular.ttf"
-
-	bgFile, err := os.Open(templatePath)
-	if err != nil {
-		return err
-	}
-	defer bgFile.Close()
-	bgImg, _, _ := image.Decode(bgFile)
-
-	photoFile, err := os.Open(photoPath)
-	if err != nil {
-		return err
-	}
-	defer photoFile.Close()
-	photoImg, _, _ := image.Decode(photoFile)
-
-	// TODO:Resize photo 
-
-	card := image.NewRGBA(bgImg.Bounds())
-	draw.Draw(card, bgImg.Bounds(), bgImg, image.Point{}, draw.Src)
-
-	photoPosition := image.Rect(155, 320, 490, 770) 
-	draw.Draw(card, photoPosition, photoImg, image.Point{}, draw.Over)
-
-	err = drawText(card, name, 240, 818, 32, roboto400, color.Black)
-	if err != nil {
-		return err
-	}
-	err = drawText(card, "SIK-"+userID, 240, 862, 28, roboto400, color.Black)
-	if err != nil {
-		return err
-	}
-
-	arr := strings.SplitN(alamat, ",", 2)
-	_ = drawText(card, arr[0], 240, 910, 24, roboto200, color.Black)
-	if len(arr) == 2 {
-		_ = drawText(card, strings.TrimLeft(arr[1], " "), 240, 945, 24, roboto200, color.Black)
-	}
-
-	outFile, _ := os.Create(outputPath)
-	defer outFile.Close()
-	return png.Encode(outFile, card)
-}
-
-func drawText(img *image.RGBA, text string, x, y int, fontSize float64, fontPath string, col color.Color) error {
-	// Load TTF font
-	fontBytes, err := os.ReadFile(fontPath)
-	if err != nil {
-		return err
-	}
-
-	ft, err := opentype.Parse(fontBytes)
-	if err != nil {
-		return err
-	}
-
-	face, err := opentype.NewFace(ft, &opentype.FaceOptions{
-		Size:    fontSize,
-		DPI:     72,
-		Hinting: font.HintingFull,
-	})
-	if err != nil {
-		return err
-	}
-	defer face.Close()
-
-	// Set up drawer
-	d := &font.Drawer{
-		Dst:  img,
-		Src:  image.NewUniform(col), // e.g. colornames.Black
-		Face: face,
-		Dot:  fixed.P(x, y),
-	}
-
-	d.DrawString(text)
-	return nil
-}
-
-func normalizeName(nama string) string {
-	maxChar := 20
-	if len(nama) <= maxChar {
-		return nama
-	}
-	fN := strings.Split(nama, " ")
-	if len(fN) == 1 {
-		return fN[0][:maxChar]
-	}
-	if len(fN[0])>=7 && fN[0][:1] == "M" && fN[0][len(fN[0])-2:] == "AD" {
-		fN[0] = "M"
-	}
-	if len(strings.Join(fN[0:3], " ")) >= maxChar-2 {
-		fN[2] = fN[2][:1]
-	}
-	res := strings.Join(fN, " ")
-	if len(res) < maxChar {
-		maxChar = len(res)
-	}
-	
-	return res[:maxChar]
-}
-
-func completionCheck(name, nik, photoData, userID, status string) (bool,string) {
+func completionCheck(m map[string]string) (bool, string) {
 	check := false
-	if name == "" {
-		return check, "nama masih kosong"
-	} else if nik == "" {
-		return check,"nik masih kosong"
-	} else if photoData == "" {
-		return check,"foto masih kosong"
-	} else if status == "" {
-		return check, "status masih kosong"
-	} else if userID == "" {
-		return check, "ID gagal dibuat"
-	} else {
-		check = true
+	for key, value := range m {
+		if value == "" {
+			return check, fmt.Sprintf("%s masih kosong", key)
+		} else {
+			check = true
+		}
 	}
 	return check, ""
 }
@@ -627,106 +485,4 @@ func ExecOrFail(query string) {
 	if _, err := db.Exec(query); err != nil {
 		log.Fatal(err)
 	}
-}
-
-func UpdateExcel(u User) error {
-	baseDir := "./data/"
-	filePath := filepath.Join(baseDir, "data.xlsx")
-
-	// Open the existing file
-	f, err := excelize.OpenFile(filePath)
-	if err != nil {
-		log.Printf("Error opening %s: %v\n", filePath, err)
-		return err
-	}
-	defer func() {
-		if cerr := f.Close(); cerr != nil {
-			log.Println("Failed to close Excel file:", cerr)
-		}
-	}()
-
-	sheet := "data"
-	rows, err := f.GetRows(sheet)
-	if err != nil {
-		log.Printf("Error reading rows in %s: %v\n", filePath, err)
-		return err
-	}
-
-	// Append to next row
-	rowIndex := len(rows) + 1
-
-	f.SetCellValue(sheet, fmt.Sprintf("A%d", rowIndex), u.ID)
-	f.SetCellValue(sheet, fmt.Sprintf("B%d", rowIndex), u.Status)
-	f.SetCellValue(sheet, fmt.Sprintf("C%d", rowIndex), u.NIK)
-	f.SetCellValue(sheet, fmt.Sprintf("D%d", rowIndex), u.Name)
-	f.SetCellValue(sheet, fmt.Sprintf("E%d", rowIndex), u.Phone)
-	f.SetCellValue(sheet, fmt.Sprintf("F%d", rowIndex), u.Address)
-	f.SetCellValue(sheet, fmt.Sprintf("G%d", rowIndex), u.Rating)
-	f.SetCellValue(sheet, fmt.Sprintf("H%d", rowIndex), u.Notes)
-	f.SetCellValue(sheet, fmt.Sprintf("I%d", rowIndex), u.Photo)
-
-	if err := f.Save(); err != nil {
-		log.Printf("Failed to save file: %v\n", err)
-		return err
-	}
-
-	return nil
-}
-
-func printPDF(user User) error {
-	pdf := gofpdf.New("P", "mm", "A4", "")
-	pdf.SetTitle("Formulir Pendaftaran Penyetor Afval", false)
-	pdf.AddPage()
-
-	pdf.SetFont("Arial", "B", 14)
-	pdf.CellFormat(0, 10, "Formulir Pendaftaran Penyetor Afval", "", 1, "C", false, 0, "")
-	pdf.Ln(0)
-	pdf.SetFont("Arial", "", 12)
-	pdf.CellFormat(0, 10, "PT. Sinar Indah Kertas", "", 1, "C", false, 0, "")
-	pdf.Ln(6)
-
-	pdf.SetFont("Arial", "", 12)
-	pdf.Cell(0, 10, "Identitas Penyetor Afval")
-	pdf.Ln(8)
-	pdf.Cell(0, 8, fmt.Sprintf("Nama     : %s", user.Name))
-	pdf.Ln(8)
-	pdf.Cell(0, 8, fmt.Sprintf("NIK         : %s", user.NIK))
-	pdf.Ln(8)
-	pdf.Cell(0, 8, fmt.Sprintf("No. Telp  : %s", user.Phone))
-	pdf.Ln(8)
-	pdf.MultiCell(0, 8, fmt.Sprintf("Alamat    : %s", user.Address), "", "", false)
-	pdf.Ln(8)
-
-	// Declaration statements
-	statements := []string{
-		"Dengan menandatangani formulir ini saya menyatakan:",
-		"    1. Saya mengajukan/mendaftar sebagai penyetor afval PT. Sinar Indah Kertas.",
-		"    2. Afval yang saya setor adalah hasil kegiatan yang sah dan tidak melanggar hukum.",
-		"    3. Saya berkomitmen untuk menjaga kualitas dan kejujuran dalam setiap setoran.",
-		"    4. Saya bersedia menjalani proses inspeksi & verifikasi sesuai sistem QC yang diterapkan.",
-		"  5. PT. Sinar Indah Kertas berhak menolak apabila kualitas afval tidak memenuhi standar      perusahaan.",
-		"    6. Saya bersedia mengikuti tata tertib yang berlaku, di antaranya:",
-		"       a. Tidak mengambil gambar/foto/video di area perusahaan.",
-		"       b. Tidak merokok di area perusahaan.",
-		"       c. Tidak melanggar batas kecepatan kendaraan di area perusahaan.",
-		"   7. Saya menyadari bahwa pelanggaran terhadap komitmen dapat berdampak pada pemutusan      kerjasama.",
-		"  8. Saya menyatakan bahwa data & pernyataan yang saya berikan adalah benar dan dapat       dipertanggungjawabkan.",
-	}
-
-	for _, line := range statements {
-		pdf.MultiCell(0, 8, line, "", "", false)
-	}
-	pdf.Ln(10)
-
-	// Signature block
-	pdf.CellFormat(0, 6, "Kudus, 24 Juli 2025", "", 1, "R", false, 0, "")
-	pdf.Ln(18)
-	pdf.CellFormat(0, 6, user.Name, "", 1, "R", false, 0, "")
-
-	// Output
-	if err := os.MkdirAll("output", os.ModePerm); err != nil {
-		return err
-	}
-	filename := fmt.Sprintf("pdf/form_%s.pdf", user.ID)
-	return pdf.OutputFileAndClose(filename)
 }

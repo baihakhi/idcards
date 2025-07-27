@@ -1,0 +1,37 @@
+package util
+
+import (
+	"strconv"
+	"strings"
+)
+
+func ParseInt(s string) int {
+	i, err := strconv.Atoi(strings.TrimSpace(s))
+	if err != nil {
+		return 0
+	}
+	return i
+}
+
+func NormalizeName(nama string) string {
+	maxChar := 20
+	if len(nama) <= maxChar {
+		return nama
+	}
+	fN := strings.Split(nama, " ")
+	if len(fN) == 1 {
+		return fN[0][:maxChar]
+	}
+	if len(fN[0]) >= 7 && fN[0][:1] == "M" && fN[0][len(fN[0])-2:] == "AD" {
+		fN[0] = "M"
+	}
+	if len(strings.Join(fN[0:3], " ")) >= maxChar-2 {
+		fN[2] = fN[2][:1]
+	}
+	res := strings.Join(fN, " ")
+	if len(res) < maxChar {
+		maxChar = len(res)
+	}
+
+	return res[:maxChar]
+}

@@ -16,7 +16,9 @@ type (
 		CreateUserAction(ctx context.Context, u *model.User) error
 		GenerateUserID(ctx context.Context, status string) (string, error)
 		GetUserList(ctx context.Context) (*[]model.User, error)
+		GetUserByNik(ctx context.Context, nik string) (*model.User, error)
 		UpdateUserAction(ctx context.Context, user *model.User) error
+		BulkUpsertUser(ctx context.Context, file io.Reader) (int, error)
 	}
 	userServ struct {
 		repo     repository.UserRepository

@@ -11,7 +11,7 @@ type (
 	UserRepository interface {
 		Begin(ctx context.Context) (*sql.Tx, error)
 		Create(ctx context.Context, user *model.User) error
-		GetList(ctx context.Context) (*[]model.User, error)
+		GetList(ctx context.Context, limit uint8) (*[]model.User, error)
 		GetLastUserId(ctx context.Context, status string) (string, error)
 		GetUserByNik(ctx context.Context, nik string) (user *model.User, err error)
 		UpdateUser(ctx context.Context, u *model.User) error
@@ -38,9 +38,9 @@ func (r *userRepo) Create(ctx context.Context, u *model.User) error {
 	return err
 }
 
-func (r *userRepo) GetList(ctx context.Context) (*[]model.User, error) {
+func (r *userRepo) GetList(ctx context.Context, limit uint8) (*[]model.User, error) {
 	users := []model.User{}
-	rows, err := r.db.Query("SELECT id, nik, status, name, phone, address, rating, notes, photo, created_at, updated_at FROM users ORDER BY updated_at DESC LIMIT 15")
+	rows, err := r.db.Query("SELECT id, nik, status, name, phone, address, rating, notes, photo, created_at, updated_at FROM users ORDER BY updated_at DESC LIMIT ?", limit)
 
 	if err != nil {
 		return nil, err
@@ -66,6 +66,10 @@ func (r *userRepo) GetLastUserId(ctx context.Context, status string) (string, er
 	)
 
 	err := r.db.QueryRow("SELECT ID, created_at FROM users where status=? ORDER BY created_at DESC LIMIT 1", status).Scan(&uID, &tgl)
+	if err == sql.ErrNoRows {
+		uID = "S001"
+		return uID, nil
+	}
 
 	return uID, err
 }

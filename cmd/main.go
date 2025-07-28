@@ -6,6 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"idcard/internal/handler"
+	"idcard/internal/repository"
+	"idcard/internal/service"
 	"log"
 	"net/http"
 	"os"
@@ -46,17 +49,24 @@ func main() {
 	db.SetConnMaxLifetime(time.Hour)
 	createTable()
 
-	tmpl = template.Must(template.ParseGlob("templates/*.html"))
-
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	http.Handle("/pdf/", http.StripPrefix("/pdf/", http.FileServer(http.Dir("pdf"))))
 
-	http.HandleFunc("/", indexHandler)
+	userRepo := repository.NewUserRepository(db)
+	pdfSvc := service.NewPdfService()
+	exclSvc := service.NewExcelService()
+	userService := service.NewUserService(userRepo,pdfSvc, exclSvc)
+	userHandler := handler.NewUserHandler(userService)
+
+
+	// "/" Page
+	http.HandleFunc("/", userHandler.IndexHandler)
 	http.HandleFunc("/get", getUserHandler)
 	http.HandleFunc("/get-id", getIdHandler)
 	http.HandleFunc("/create", createHandler)
 	http.HandleFunc("/update", updateHandler)
 
+	// "/upload" Page
 	http.HandleFunc("/upload", func(w http.ResponseWriter, r *http.Request) {
 		tmpl.ExecuteTemplate(w, "upload file.html", nil)
 	})
@@ -97,60 +107,6 @@ func createTable() {
 	ExecOrFail(trigger)
 	ExecOrFail(idxNik)
 	ExecOrFail(idxStatus)
-}
-
-func indexHandler(w http.ResponseWriter, r *http.Request) {
-	users := []User{}
-	uID := "S001"
-	rows, err := db.Query("SELECT id, nik, status, name, phone, address, rating, notes, photo, created_at, updated_at FROM users ORDER BY updated_at DESC LIMIT 15")
-
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var u User
-		err := rows.Scan(&u.ID, &u.NIK, &u.Status, &u.Name, &u.Phone, &u.Address, &u.Rating, &u.Notes, &u.Photo, &u.CreatedAt, &u.UpdatedAt)
-		if err != nil {
-			http.Error(w, err.Error(), 500)
-			return
-		}
-		users = append(users, u)
-	}
-
-	if len(users) > 0 {
-		lID, _ := strconv.Atoi(users[0].ID[1:])
-		uID = fmt.Sprintf("S%03d", lID)
-	}
-
-	for i := 0; i < len(users); i++ {
-		users[i].Name = normalizeName(users[i].Name)
-	}
-
-	tmpl.ExecuteTemplate(w, "index.html", map[string]any{
-		"Action": "/create",
-		"Method": "POST",
-		"UserID": uID,
-		"User":   users,
-	})
-}
-
-func getUserHandler(w http.ResponseWriter, r *http.Request) {
-	var u User
-
-	nik := r.URL.Query().Get("nik")
-
-	err := db.QueryRow("SELECT * FROM users WHERE nik = ?", nik).Scan(&u.ID, &u.NIK, &u.Status, &u.Name, &u.Phone, &u.Address, &u.Rating, &u.Notes, &u.Photo, &u.CreatedAt, &u.UpdatedAt)
-	if err != nil {
-		log.Println("err:", err)
-		json.NewEncoder(w).Encode(map[string]string{"Error": fmt.Sprintf("error getting user of NIK: %s | %s", nik, err.Error())})
-		return
-	}
-
-	log.Println("send data:", u)
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{"Data": u})
 }
 
 func getIdHandler(w http.ResponseWriter, r *http.Request) {

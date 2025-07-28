@@ -1,6 +1,8 @@
 package util
 
 import (
+	"encoding/base64"
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -34,4 +36,25 @@ func NormalizeName(nama string) string {
 	}
 
 	return res[:maxChar]
+}
+
+func CompletionCheck(m map[string]string) (bool, string) {
+	check := false
+	for key, value := range m {
+		if value == "" {
+			return check, fmt.Sprintf("%s masih kosong!", key)
+		} else {
+			check = true
+		}
+	}
+	return check, ""
+}
+
+func StringtoByte(str string) ([]byte, error) {
+	data := str[strings.Index(str, ",")+1:]
+	imgByte, err := base64.StdEncoding.DecodeString(data)
+	if err != nil {
+		return nil, err
+	}
+	return imgByte, nil
 }

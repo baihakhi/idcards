@@ -15,7 +15,7 @@ type (
 	UserService interface {
 		CreateUserAction(ctx context.Context, u *model.User) error
 		GenerateUserID(ctx context.Context, status string) (string, error)
-		GetUserList(ctx context.Context) (*[]model.User, error)
+		GetUserList(ctx context.Context, limit uint8) (*[]model.User, error)
 		GetUserByNik(ctx context.Context, nik string) (*model.User, error)
 		UpdateUserAction(ctx context.Context, user *model.User) error
 		BulkUpsertUser(ctx context.Context, file io.Reader) (int, error)
@@ -69,12 +69,11 @@ func (s *userServ) GenerateUserID(ctx context.Context, status string) (string, e
 	}
 
 	userCount, err := strconv.Atoi(res[1:])
-	return fmt.Sprintf("S%03d", userCount), err
+	return fmt.Sprintf("S%03d", userCount+1), err
 }
 
-func (s *userServ) GetUserList(ctx context.Context) (*[]model.User, error) {
-	var users *[]model.User
-	users, err := s.repo.GetList(ctx)
+func (s *userServ) GetUserList(ctx context.Context, limit uint8) (*[]model.User, error) {
+	users, err := s.repo.GetList(ctx, limit)
 	if err != nil {
 		return nil, err
 	}

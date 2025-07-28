@@ -29,15 +29,15 @@ import (
 )
 
 type User struct {
-	ID    string
-	Status string
-	NIK string
-	Name  string
-	Phone string
-	Address string
-	Rating int
-	Notes string
-	Photo string
+	ID        string
+	Status    string
+	NIK       string
+	Name      string
+	Phone     string
+	Address   string
+	Rating    int
+	Notes     string
+	Photo     string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -49,14 +49,14 @@ type Result struct {
 }
 
 var (
-	db *sql.DB
+	db   *sql.DB
 	tmpl *template.Template
 )
 
 const (
 	pathToTempl string = "static/assets/"
-	pathToCard string = "cards/idcards/"
-	pathToFont string = "static/assets/fonts/"
+	pathToCard  string = "output/cards/idcards/"
+	pathToFont  string = "static/assets/fonts/"
 )
 
 func main() {
@@ -73,7 +73,7 @@ func main() {
 	tmpl = template.Must(template.ParseGlob("templates/*.html"))
 
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-	http.Handle("/pdf/", http.StripPrefix("/pdf/", http.FileServer(http.Dir("pdf"))))
+	http.Handle("/pdf/", http.StripPrefix("output/pdf/", http.FileServer(http.Dir("pdf"))))
 
 	http.HandleFunc("/", indexHandler)
 	http.HandleFunc("/get", getUserHandler)
@@ -81,7 +81,7 @@ func main() {
 	http.HandleFunc("/create", createHandler)
 	http.HandleFunc("/update", updateHandler)
 
-	http.HandleFunc("/upload", func(w http.ResponseWriter, r *http.Request){
+	http.HandleFunc("/upload", func(w http.ResponseWriter, r *http.Request) {
 		tmpl.ExecuteTemplate(w, "upload file.html", nil)
 	})
 	http.HandleFunc("/upload/upsert", uploadHandler)
@@ -127,7 +127,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	users := []User{}
 	uID := "S001"
 	rows, err := db.Query("SELECT id, nik, status, name, phone, address, rating, notes, photo, created_at, updated_at FROM users ORDER BY updated_at DESC LIMIT 15")
-	
+
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -153,21 +153,21 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tmpl.ExecuteTemplate(w, "index.html", map[string]any{
-			"Action": "/create",
-			"Method": "POST",
-			"UserID": uID,
-			"User": users,
-		})
+		"Action": "/create",
+		"Method": "POST",
+		"UserID": uID,
+		"User":   users,
+	})
 }
 
 func getUserHandler(w http.ResponseWriter, r *http.Request) {
 	var u User
-	
+
 	nik := r.URL.Query().Get("nik")
 
 	err := db.QueryRow("SELECT * FROM users WHERE nik = ?", nik).Scan(&u.ID, &u.NIK, &u.Status, &u.Name, &u.Phone, &u.Address, &u.Rating, &u.Notes, &u.Photo, &u.CreatedAt, &u.UpdatedAt)
 	if err != nil {
-	log.Println("err:", err)
+		log.Println("err:", err)
 		json.NewEncoder(w).Encode(map[string]string{"Error": fmt.Sprintf("error getting user of NIK: %s | %s", nik, err.Error())})
 		return
 	}
@@ -195,23 +195,23 @@ func getIdHandler(w http.ResponseWriter, r *http.Request) {
 
 func createHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("create handler")
-	
+
 	if r.Method != http.MethodPost {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
-	nik		:= r.FormValue("nik")
-	name 	:= r.FormValue("name")
-	status 	:= r.FormValue("status")
-	phone 	:= r.FormValue("phone")
+	nik := r.FormValue("nik")
+	name := r.FormValue("name")
+	status := r.FormValue("status")
+	phone := r.FormValue("phone")
 	address := r.FormValue("address")
-	rating 	:= r.FormValue("rating")
+	rating := r.FormValue("rating")
 	if rating == "" {
 		rating = "0"
 	}
 	ratingInt, _ := strconv.Atoi(rating)
-	notes 	:= r.FormValue("notes")
+	notes := r.FormValue("notes")
 	photoData := r.FormValue("photo")
 	userID, err := generateUserID(status)
 	if err != nil {
@@ -220,9 +220,9 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	
+
 	check, errLog := completionCheck(name, nik, photoData, userID, status)
-	if !check{
+	if !check {
 		err := fmt.Errorf("lengkapi data, %s", errLog)
 		tmpl.ExecuteTemplate(w, "index.html", map[string]interface{}{
 			"Error": err.Error(),
@@ -238,8 +238,8 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	os.WriteFile(photoPath, imgBytes, 0644)
 
 	log.Println(name, userID, webPhotoPath)
-	_, err = db.Exec("INSERT INTO users (id, nik, status, name, phone, address, rating, notes, photo)" +
-	"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+	_, err = db.Exec("INSERT INTO users (id, nik, status, name, phone, address, rating, notes, photo)"+
+		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		userID, nik, status, name, phone, address, rating, notes, webPhotoPath)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
@@ -257,15 +257,15 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	u := User{
-		ID: userID,
-		Status: status,
-		NIK: nik,
-		Name: name,
-		Phone: phone,
+		ID:      userID,
+		Status:  status,
+		NIK:     nik,
+		Name:    name,
+		Phone:   phone,
 		Address: address,
-		Rating: ratingInt,
-		Notes: notes,
-		Photo: webPhotoPath,
+		Rating:  ratingInt,
+		Notes:   notes,
+		Photo:   webPhotoPath,
 	}
 
 	err = UpdateExcel(u)
@@ -279,7 +279,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateHandler(w http.ResponseWriter, r *http.Request) {
-	
+
 	log.Println("update handler ", r.Method)
 	if r.Method != http.MethodPost {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -287,21 +287,20 @@ func updateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := r.FormValue("userIdInput")
-	nik		:= r.FormValue("nik")
-	name 	:= r.FormValue("name")
-	status 	:= r.FormValue("status")
-	phone 	:= r.FormValue("phone")
+	nik := r.FormValue("nik")
+	name := r.FormValue("name")
+	status := r.FormValue("status")
+	phone := r.FormValue("phone")
 	address := r.FormValue("address")
-	rating 	:= r.FormValue("rating")
+	rating := r.FormValue("rating")
 	if rating == "" {
 		rating = "1"
 	}
-	notes 	:= r.FormValue("notes")
+	notes := r.FormValue("notes")
 	photoData := r.FormValue("photo")
 
-
 	check, errLog := completionCheck(name, nik, photoData, userID, status)
-	if !check{
+	if !check {
 		err := fmt.Errorf("lengkapi data, %s", errLog)
 		log.Println(err)
 		tmpl.ExecuteTemplate(w, "index.html", map[string]any{
@@ -317,15 +316,15 @@ func updateHandler(w http.ResponseWriter, r *http.Request) {
 	webPhotoPath := strings.ReplaceAll(photoPath, `\`, `/`)
 	os.WriteFile(photoPath, imgBytes, 0644)
 
-	log.Println("file written",name, userID, webPhotoPath)
-	_, err := db.Exec("UPDATE users SET nik=?, status=?, name=?, phone=?, address=?, rating=?, notes=?, photo=? " +
-	"WHERE users.id=?",
+	log.Println("file written", name, userID, webPhotoPath)
+	_, err := db.Exec("UPDATE users SET nik=?, status=?, name=?, phone=?, address=?, rating=?, notes=?, photo=? "+
+		"WHERE users.id=?",
 		nik, status, name, phone, address, rating, notes, webPhotoPath, userID)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
-	
+
 	templatePath := pathToTempl + "kartu.png"
 	outputPath := pathToCard + userID + ".png"
 	err = generateIDCard(templatePath, webPhotoPath, outputPath, normalizeName(name), userID, address)
@@ -406,7 +405,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 				Address: row[5],
 				Rating:  parseInt(row[6]),
 				Notes:   ket,
-				Photo: foto,
+				Photo:   foto,
 			}
 			jobs <- u
 		}
@@ -491,7 +490,7 @@ func GetUserByNik(nik string) (u User, err error) {
 func generateUserID(status string) (string, error) {
 	var (
 		total int
-	) 
+	)
 
 	err := db.QueryRow("SELECT COUNT(id) AS total_user FROM users where status=?", status).Scan(&total)
 	if err != nil {
@@ -520,12 +519,12 @@ func generateIDCard(templatePath, photoPath, outputPath, name, userID, alamat st
 	defer photoFile.Close()
 	photoImg, _, _ := image.Decode(photoFile)
 
-	// TODO:Resize photo 
+	// TODO:Resize photo
 
 	card := image.NewRGBA(bgImg.Bounds())
 	draw.Draw(card, bgImg.Bounds(), bgImg, image.Point{}, draw.Src)
 
-	photoPosition := image.Rect(155, 320, 490, 770) 
+	photoPosition := image.Rect(155, 320, 490, 770)
 	draw.Draw(card, photoPosition, photoImg, image.Point{}, draw.Over)
 
 	err = drawText(card, name, 240, 818, 32, roboto400, color.Black)
@@ -591,7 +590,7 @@ func normalizeName(nama string) string {
 	if len(fN) == 1 {
 		return fN[0][:maxChar]
 	}
-	if len(fN[0])>=7 && fN[0][:1] == "M" && fN[0][len(fN[0])-2:] == "AD" {
+	if len(fN[0]) >= 7 && fN[0][:1] == "M" && fN[0][len(fN[0])-2:] == "AD" {
 		fN[0] = "M"
 	}
 	if len(strings.Join(fN[0:3], " ")) >= maxChar-2 {
@@ -601,18 +600,18 @@ func normalizeName(nama string) string {
 	if len(res) < maxChar {
 		maxChar = len(res)
 	}
-	
+
 	return res[:maxChar]
 }
 
-func completionCheck(name, nik, photoData, userID, status string) (bool,string) {
+func completionCheck(name, nik, photoData, userID, status string) (bool, string) {
 	check := false
 	if name == "" {
 		return check, "nama masih kosong"
 	} else if nik == "" {
-		return check,"nik masih kosong"
+		return check, "nik masih kosong"
 	} else if photoData == "" {
-		return check,"foto masih kosong"
+		return check, "foto masih kosong"
 	} else if status == "" {
 		return check, "status masih kosong"
 	} else if userID == "" {
@@ -704,13 +703,13 @@ func printPDF(user User) error {
 		"    2. Afval yang saya setor adalah hasil kegiatan yang sah dan tidak melanggar hukum.",
 		"    3. Saya berkomitmen untuk menjaga kualitas dan kejujuran dalam setiap setoran.",
 		"    4. Saya bersedia menjalani proses inspeksi & verifikasi sesuai sistem QC yang diterapkan.",
-		"  5. PT. Sinar Indah Kertas berhak menolak apabila kualitas afval tidak memenuhi standar      perusahaan.",
+		"  5. PT. Sinar Indah Kertas berhak menolak apabila kualitas afval tidak memenuhi standar            perusahaan.",
 		"    6. Saya bersedia mengikuti tata tertib yang berlaku, di antaranya:",
 		"       a. Tidak mengambil gambar/foto/video di area perusahaan.",
 		"       b. Tidak merokok di area perusahaan.",
 		"       c. Tidak melanggar batas kecepatan kendaraan di area perusahaan.",
-		"   7. Saya menyadari bahwa pelanggaran terhadap komitmen dapat berdampak pada pemutusan      kerjasama.",
-		"  8. Saya menyatakan bahwa data & pernyataan yang saya berikan adalah benar dan dapat       dipertanggungjawabkan.",
+		"   7. Saya menyadari bahwa pelanggaran terhadap komitmen dapat berdampak pada pemutusan            kerjasama.",
+		"  8. Saya menyatakan bahwa data & pernyataan yang saya berikan adalah benar dan dapat             dipertanggungjawabkan.",
 	}
 
 	for _, line := range statements {
@@ -727,6 +726,6 @@ func printPDF(user User) error {
 	if err := os.MkdirAll("output", os.ModePerm); err != nil {
 		return err
 	}
-	filename := fmt.Sprintf("pdf/form_%s.pdf", user.ID)
+	filename := fmt.Sprintf("output/pdf/form_%s.pdf", user.ID)
 	return pdf.OutputFileAndClose(filename)
 }

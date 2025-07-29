@@ -16,6 +16,7 @@ import (
 
 	"github.com/jung-kurt/gofpdf"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/tigorlazuardi/tanggal"
 	"github.com/xuri/excelize/v2"
 
 	"image"
@@ -717,8 +718,16 @@ func printPDF(user User) error {
 	}
 	pdf.Ln(10)
 
+	tgl, _ := tanggal.Papar(time.Now(), "Kudus", tanggal.WIB)
+	format := []tanggal.Format{
+		tanggal.LokasiDenganKoma,
+		tanggal.Hari,
+		tanggal.NamaBulan,
+		tanggal.Tahun,
+	}
+
 	// Signature block
-	pdf.CellFormat(0, 6, "Kudus, 24 Juli 2025", "", 1, "R", false, 0, "")
+	pdf.CellFormat(0, 6, tgl.Format(" ", format), "", 1, "R", false, 0, "")
 	pdf.Ln(18)
 	pdf.CellFormat(0, 6, user.Name, "", 1, "R", false, 0, "")
 

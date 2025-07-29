@@ -1,19 +1,24 @@
-FROM golang:1.22-slim
+# Makefile
 
-# Install dependencies for SQLite + CGO
-RUN apt-get update && apt-get install -y gcc libc6-dev
+APP_NAME = idcard-app
 
-WORKDIR /app
+run:
+	go run ./cmd
 
-COPY go.mod go.sum ./
-RUN go mod download
+build:
+	docker build -t $(APP_NAME) .
 
-COPY . .
+up:
+	docker-compose up -d
 
-# ⛏ Compile with CGO enabled
-ENV CGO_ENABLED=1
-RUN go build -o app .
+down:
+	docker-compose down
 
-EXPOSE 8080
+logs:
+	docker-compose logs -f
 
-CMD ["./app"]
+restart:
+	make down && make up
+
+clean:
+	docker system prune -f

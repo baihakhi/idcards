@@ -101,8 +101,8 @@ func (h *UserHandler) CreateUserHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	rating := "0"
-	if r.FormValue("ratig") != "" {
-		rating = r.FormValue("ratig")
+	if r.FormValue("rating") != "" {
+		rating = r.FormValue("rating")
 	}
 
 	formData := map[string]string{
@@ -151,5 +151,89 @@ func (h *UserHandler) CreateUserHandler(w http.ResponseWriter, r *http.Request) 
 		})
 		return
 	}
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func (h *UserHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	ctx := r.Context()
+	rating := "0"
+	if r.FormValue("rating") != "" {
+		rating = r.FormValue("rating")
+	}
+
+	formData := map[string]string{
+		"id":        r.FormValue("userIdInput"),
+		"nik":       r.FormValue("nik"),
+		"name":      r.FormValue("name"),
+		"status":    r.FormValue("status"),
+		"phone":     r.FormValue("phone"),
+		"address":   r.FormValue("address"),
+		"rating":    rating,
+		"notes":     r.FormValue("notes"),
+		"photoData": r.FormValue("photo"),
+	}
+
+	check, errLog := util.CompletionCheck(formData)
+	if !check {
+		err := fmt.Errorf("lengkapi data, %s", errLog)
+		json.NewEncoder(w).Encode(map[string]error{"Error": err})
+		return
+	}
+
+	imgByte, err := util.StringtoByte(formData["photoData"])
+	if err != nil {
+		json.NewEncoder(w).Encode(map[string]string{
+			"Error": fmt.Sprintf("picture decoder: %s", err.Error()),
+		})
+		return
+	}
+
+	imgPath := util.ImageWriter(imgByte, `static\uploads`, formData["id"], ".png")
+
+	err = h.UserService.UpdateUserAction(ctx, &model.User{
+		ID:      formData["id"],
+		NIK:     formData["nik"],
+		Name:    formData["name"],
+		Status:  formData["status"],
+		Phone:   formData["phone"],
+		Address: formData["address"],
+		Rating:  util.ParseInt(rating),
+		Notes:   formData["notes"],
+		Photo:   imgPath,
+	})
+	if err != nil {
+		json.NewEncoder(w).Encode(map[string]string{
+			"Error": fmt.Sprintf("picture decoder: %s", err.Error()),
+		})
+		return
+	}
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func (h *UserHandler) UploadHandler(w http.ResponseWriter, r *http.Request) {
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "Failed to get file", 400)
+		return
+	}
+	defer file.Close()
+
+	affected, err := h.UserService.BulkUpsertUser(r.Context(), file)
+	if err != nil {
+		json.NewEncoder(w).Encode(map[string]string{
+			"Error": fmt.Sprintf("picture decoder: %s", err.Error()),
+		})
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{
+		"message":  "Bulk update success",
+		"affected": affected,
+	})
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

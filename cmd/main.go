@@ -1,14 +1,13 @@
 package main
 
 import (
-	"database/sql"
 	"html/template"
+	"idcard/internal/config"
 	"idcard/internal/handler"
 	"idcard/internal/repository"
 	"idcard/internal/service"
 	"log"
 	"net/http"
-	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -20,7 +19,6 @@ type Result struct {
 }
 
 var (
-	db   *sql.DB
 	tmpl *template.Template
 )
 
@@ -31,14 +29,13 @@ const (
 )
 
 func main() {
-	var err error
-	db, err = sql.Open("sqlite3", "./data/users.db")
+	db, err := config.InitDB("./data/users.db")
 	if err != nil {
 		log.Fatal(err)
+		return
 	}
-	db.SetMaxOpenConns(10)
-	db.SetMaxIdleConns(5)
-	db.SetConnMaxLifetime(time.Hour)
+	defer config.CloseDB()
+
 	createTable()
 
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))

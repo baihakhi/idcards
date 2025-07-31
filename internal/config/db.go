@@ -1,22 +1,24 @@
 package config
 
 import (
+	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"sync"
 	"time"
 )
 
-// DB is an interface to abstract database operations for mocking/testing.
 type DB interface {
 	Query(query string, args ...any) (*sql.Rows, error)
 	QueryRow(query string, args ...any) *sql.Row
 	Exec(query string, args ...any) (sql.Result, error)
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 	Begin() (*sql.Tx, error)
+	BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error)
 	Close() error
 }
 
-// RealDB wraps *sql.DB to implement the DB interface.
 type RealDB struct {
 	conn *sql.DB
 }
@@ -33,26 +35,35 @@ func (r *RealDB) Exec(query string, args ...any) (sql.Result, error) {
 	return r.conn.Exec(query, args...)
 }
 
+func (r RealDB) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	return r.conn.ExecContext(ctx, query, args...)
+}
+
 func (r *RealDB) Begin() (*sql.Tx, error) {
 	return r.conn.Begin()
+}
+
+func (r RealDB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error) {
+	return r.conn.BeginTx(ctx, opts)
 }
 
 func (r *RealDB) Close() error {
 	return r.conn.Close()
 }
 
-// Singleton instance
 var (
 	dbInstance DB
 	once       sync.Once
+	initErr    error
 )
 
-// InitDB initializes the database connection once and wraps it with RealDB.
-func InitDB(dataSourceName string) DB {
+// InitDB initializes the database connection once.
+func InitDB(dataSourceName string) (DB, error) {
 	once.Do(func() {
 		conn, err := sql.Open("sqlite3", dataSourceName)
 		if err != nil {
-			log.Fatalf("Failed to connect to database: %v", err)
+			initErr = fmt.Errorf("[DB]Failed to connect to database: %v", err)
+			return
 		}
 
 		conn.SetMaxOpenConns(10)
@@ -60,30 +71,25 @@ func InitDB(dataSourceName string) DB {
 		conn.SetConnMaxLifetime(time.Hour)
 
 		if err := conn.Ping(); err != nil {
-			log.Fatalf("Failed to ping database: %v", err)
+			log.Fatalf("[DB]Failed to ping database: %v", err)
+			initErr = fmt.Errorf("[DB]Failed to ping database: %v", err)
+			return
 		}
 
-		log.Println("Database connection established.")
+		log.Println("[DB]Database connection established.")
 		dbInstance = &RealDB{conn: conn}
 	})
-	return dbInstance
+	return dbInstance, initErr
 }
 
-// GetDB returns the singleton DB interface.
-func GetDB() DB {
-	if dbInstance == nil {
-		log.Fatal("Database is not initialized. Call InitDB first.")
-	}
-	return dbInstance
-}
-
-// CloseDB closes the real database connection.
+// CloseDB closes the database connection.
 func CloseDB() {
 	if dbInstance != nil {
 		if err := dbInstance.Close(); err != nil {
-			log.Printf("Error closing database: %v", err)
+			log.Fatal("[DB]Error closing database: %v", err)
 		} else {
-			log.Println("Database connection closed.")
+			log.Println("[DB]Database connection closed.")
 		}
 	}
+	return
 }

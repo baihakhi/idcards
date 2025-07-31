@@ -2,3 +2,6 @@ cards/
 pdf/
 tester/
 static/uploads/
+
+*.exe
+*.xlsx

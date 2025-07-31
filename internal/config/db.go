@@ -86,10 +86,9 @@ func InitDB(dataSourceName string) (DB, error) {
 func CloseDB() {
 	if dbInstance != nil {
 		if err := dbInstance.Close(); err != nil {
-			log.Fatal("[DB]Error closing database: %v", err)
+			log.Fatal("[DB]Error closing database:", err)
 		} else {
 			log.Println("[DB]Database connection closed.")
 		}
 	}
-	return
 }

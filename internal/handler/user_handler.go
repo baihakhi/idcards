@@ -215,6 +215,10 @@ func (h *UserHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Request) 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
+func (h *UserHandler) UploadRedirecthandler(w http.ResponseWriter, r *http.Request) {
+	tmpl.ExecuteTemplate(w, "upload file.html", nil)
+}
+
 func (h *UserHandler) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	file, _, err := r.FormFile("file")
 	if err != nil {

@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"idcard/internal/config"
 	"idcard/internal/model"
 	"time"
 )
@@ -18,11 +19,11 @@ type (
 		UpsertUser(ctx context.Context, tx *sql.Tx, u model.User) (int64, error)
 	}
 	userRepo struct {
-		db *sql.DB
+		db config.DB
 	}
 )
 
-func NewUserRepository(database *sql.DB) UserRepository {
+func NewUserRepository(database config.DB) UserRepository {
 	return &userRepo{db: database}
 }
 

@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"image/draw"
 	"image/png"
+	"log"
 	"os"
 	"strings"
 
@@ -15,7 +16,7 @@ import (
 
 const (
 	PathToTempl string = "static/assets/"
-	PathToCard  string = "cards/idcards/"
+	PathToCard  string = "output/cards/idcards/"
 
 	pathToFont string = "static/assets/fonts/"
 )
@@ -26,6 +27,7 @@ func GenerateIDCard(templatePath, photoPath, outputPath, name, userID, alamat st
 
 	bgFile, err := os.Open(templatePath)
 	if err != nil {
+		log.Print("template", err)
 		return err
 	}
 	defer bgFile.Close()
@@ -33,6 +35,7 @@ func GenerateIDCard(templatePath, photoPath, outputPath, name, userID, alamat st
 
 	photoFile, err := os.Open(photoPath)
 	if err != nil {
+		log.Print("file", err)
 		return err
 	}
 	defer photoFile.Close()
@@ -48,10 +51,12 @@ func GenerateIDCard(templatePath, photoPath, outputPath, name, userID, alamat st
 
 	err = drawText(card, name, 240, 818, 32, roboto400, color.Black)
 	if err != nil {
+		log.Print("drawer", err)
 		return err
 	}
 	err = drawText(card, "SIK-"+userID, 240, 862, 28, roboto400, color.Black)
 	if err != nil {
+		log.Print("drawer", err)
 		return err
 	}
 
@@ -84,6 +89,7 @@ func drawText(img *image.RGBA, text string, x, y int, fontSize float64, fontPath
 		Hinting: font.HintingFull,
 	})
 	if err != nil {
+		log.Print("font", err)
 		return err
 	}
 	defer face.Close()

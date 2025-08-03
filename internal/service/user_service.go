@@ -8,6 +8,7 @@ import (
 	"idcard/internal/repository"
 	"idcard/internal/util"
 	"io"
+	"log"
 	"strconv"
 )
 
@@ -64,12 +65,14 @@ func (s *userServ) CreateUserAction(ctx context.Context, u *model.User) error {
 
 func (s *userServ) GenerateUserID(ctx context.Context, status string) (string, error) {
 	res, err := s.repo.GetLastUserId(ctx, status)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		return "", err
+	} else if err == sql.ErrNoRows {
+		return fmt.Sprintf("%s%03d", status, 1), nil
 	}
 
 	userCount, err := strconv.Atoi(res[1:])
-	return fmt.Sprintf("S%03d", userCount+1), err
+	return fmt.Sprintf("%s%03d", status, userCount+1), err
 }
 
 func (s *userServ) GetUserList(ctx context.Context, limit uint8) (*[]model.User, error) {
@@ -94,19 +97,23 @@ func (s *userServ) GetUserByNik(ctx context.Context, nik string) (*model.User, e
 
 func (s *userServ) UpdateUserAction(ctx context.Context, user *model.User) error {
 	if err := s.repo.UpdateUser(ctx, user); err != nil {
+		log.Print("db: ", err)
 		return err
 	}
 
 	outputPath := util.PathToCard + user.ID + ".png"
 	if err := util.GenerateIDCard(templatePath, user.Photo, outputPath, util.NormalizeName(user.Name), user.ID, user.Address); err != nil {
+		log.Print("id generator: ", err)
 		return err
 	}
 
 	if err := s.excelSvc.UpdateExcel(user); err != nil {
+		log.Print("excel: ", err)
 		return err
 	}
 
 	if err := s.pdfSvc.PrintPDF(user); err != nil {
+		log.Print("pdf: ", err)
 		return err
 	}
 

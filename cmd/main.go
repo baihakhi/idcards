@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	db, err := config.InitDB("./data/users.db")
+	db, err := config.InitDB("./internal/data/users.db")
 	if err != nil {
 		log.Fatal(err)
 		return

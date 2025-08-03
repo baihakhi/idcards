@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"idcard/internal/model"
 	"os"
+	"time"
 
 	"github.com/jung-kurt/gofpdf"
+	"github.com/tigorlazuardi/tanggal"
 )
 
 type (
@@ -51,13 +53,13 @@ func (s *pdfSvc) PrintPDF(user *model.User) error {
 		"    2. Afval yang saya setor adalah hasil kegiatan yang sah dan tidak melanggar hukum.",
 		"    3. Saya berkomitmen untuk menjaga kualitas dan kejujuran dalam setiap setoran.",
 		"    4. Saya bersedia menjalani proses inspeksi & verifikasi sesuai sistem QC yang diterapkan.",
-		"  5. PT. Sinar Indah Kertas berhak menolak apabila kualitas afval tidak memenuhi standar      perusahaan.",
+		"  5. PT. Sinar Indah Kertas berhak menolak apabila kualitas afval tidak memenuhi standar            perusahaan.",
 		"    6. Saya bersedia mengikuti tata tertib yang berlaku, di antaranya:",
 		"       a. Tidak mengambil gambar/foto/video di area perusahaan.",
 		"       b. Tidak merokok di area perusahaan.",
 		"       c. Tidak melanggar batas kecepatan kendaraan di area perusahaan.",
-		"   7. Saya menyadari bahwa pelanggaran terhadap komitmen dapat berdampak pada pemutusan      kerjasama.",
-		"  8. Saya menyatakan bahwa data & pernyataan yang saya berikan adalah benar dan dapat       dipertanggungjawabkan.",
+		"   7. Saya menyadari bahwa pelanggaran terhadap komitmen dapat berdampak pada pemutusan            kerjasama.",
+		"  8. Saya menyatakan bahwa data & pernyataan yang saya berikan adalah benar dan dapat             dipertanggungjawabkan.",
 	}
 
 	for _, line := range statements {
@@ -65,8 +67,16 @@ func (s *pdfSvc) PrintPDF(user *model.User) error {
 	}
 	pdf.Ln(10)
 
+	tgl, _ := tanggal.Papar(time.Now(), "Kudus", tanggal.WIB)
+	format := []tanggal.Format{
+		tanggal.LokasiDenganKoma,
+		tanggal.Hari,
+		tanggal.NamaBulan,
+		tanggal.Tahun,
+	}
+
 	// Signature block
-	pdf.CellFormat(0, 6, "Kudus, 24 Juli 2025", "", 1, "R", false, 0, "")
+	pdf.CellFormat(0, 6, tgl.Format(" ", format), "", 1, "R", false, 0, "")
 	pdf.Ln(18)
 	pdf.CellFormat(0, 6, user.Name, "", 1, "R", false, 0, "")
 

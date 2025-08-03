@@ -23,7 +23,7 @@ func NewExcelService() ExcelService {
 }
 
 func (s *excelSvc) UpdateExcel(u *model.User) error {
-	filePath := "./data/data.xlsx"
+	filePath := "./internal/data/data.xlsx"
 
 	// Open the existing file
 	f, err := excelize.OpenFile(filePath)

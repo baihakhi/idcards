@@ -41,7 +41,7 @@ func (h *UserHandler) IndexHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	lastUID, err := h.UserService.GenerateUserID(ctx, "s")
+	lastUID, err := h.UserService.GenerateUserID(ctx, "S")
 	if err != nil {
 		json.NewEncoder(w).Encode(map[string]string{"Error": fmt.Sprintf("error generating new ID for: %s", err.Error())})
 		return
@@ -147,7 +147,7 @@ func (h *UserHandler) CreateUserHandler(w http.ResponseWriter, r *http.Request) 
 	})
 	if err != nil {
 		json.NewEncoder(w).Encode(map[string]string{
-			"Error": fmt.Sprintf("picture decoder: %s", err.Error()),
+			"Error": fmt.Sprintf("db connection: %s", err.Error()),
 		})
 		return
 	}
@@ -208,7 +208,7 @@ func (h *UserHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Request) 
 	})
 	if err != nil {
 		json.NewEncoder(w).Encode(map[string]string{
-			"Error": fmt.Sprintf("picture decoder: %s", err.Error()),
+			"Error": fmt.Sprintf("user update service: %s", err.Error()),
 		})
 		return
 	}

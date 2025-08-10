@@ -1,3 +1,18 @@
+:root {
+  --color-primary: #014421; /* pakistan green */
+  --color-primary-hover: #013A1D;
+  --color-secondary: #8A9A5B; /*moss green */
+  --color-secondary-hover: #7A8A50;
+
+  --color-sage: #BCB88A;
+  --color-dark-green: #013220;
+  --color-hunter-green: #355E3B;
+
+  --color-white: #FFFFFF;
+  --color-off-white: #F8F8F8;
+}
+
+
 .main-container {
   display: flex;
   justify-content: space-around;
@@ -76,9 +91,15 @@
   object-fit: cover;
 }
 
-@media only screen and (max-width: 1000px) {
+@media only screen and (max-width: 1100px) {
+  form {
+    width: 100%;
+  }
   .main-container {
     flex-direction: column;
+  }
+  .user-list {
+    width: 100%;
   }
 }
 

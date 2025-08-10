@@ -1,11 +1,11 @@
-cards/
-pdf/
+output/cards/
+output/pdf/
 tester/
 static/uploads/
+.vscode/
 
 *.exe
 *.xlsx
 *.txt
 
 .env
-.vscode/

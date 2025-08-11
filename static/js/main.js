@@ -10,12 +10,23 @@ navigator.mediaDevices
   .catch(console.error);
 
 let camPlayed = false;
+let statusVal = ""
 
 // getUserbyNik get user detail by NIK inputed
 // update action and method to /update if user exist
 function getUserbyNik() {
   const nik = document.getElementById("nik").value;
-  console.log("send", nik);
+  const userStatus = document.getElementById("dropdown").value;
+  switch (userStatus) {
+    case V:
+      statusVal = "Vendor"
+      break;
+
+    default:
+      statusVal = "Penyetor"
+      break;
+  }
+
 
   if (nik.trim() === "") return;
 
@@ -27,7 +38,7 @@ function getUserbyNik() {
       } else {
         const user = data.Data;
         const form = document.querySelector("form");
-        console.log("user id: ", user.ID);
+        const formBtn = document.getElementById("formSubmit")
 
         clearWarning();
         document.getElementById("userIdInput").value = user.ID;
@@ -43,6 +54,7 @@ function getUserbyNik() {
         document.querySelector('input[name="notes"]').value = user.Notes || "";
 
         form.setAttribute("action", "/update");
+        formBtn.textContent = "Update " + statusVal;
       }
     })
     .catch((err) => {
@@ -52,7 +64,16 @@ function getUserbyNik() {
 
 // getUserIDbyStatus get current userID by status value
 function getUserIDbyStatus() {
-  userStatus = document.getElementById("dropdown").value;
+  const userStatus = document.getElementById("dropdown").value;
+switch (userStatus) {
+  case V:
+    statusVal = "Vendor"
+    break;
+
+  default:
+    statusVal = "Penyetor"
+    break;
+}
 
   fetch(`/get-id?status=${encodeURIComponent(userStatus)}`)
     .then((res) => res.json())
@@ -68,10 +89,11 @@ function getUserIDbyStatus() {
         clearWarning();
         document.getElementById("userId").textContent = userID;
         document.getElementById("userIdInput").value = userID;
+        document.getElementById("formSubmit").textContent = "Simpan " + statusVal
       }
     })
     .catch((err) => {
-      console.error("Error generating user IDK:", err);
+      console.error("Error generating user ID:", err);
     });
 }
 
@@ -102,7 +124,8 @@ function capture() {
 }
 
 function showWarning(message) {
-  document.getElementById("warning").style.display = "absolute";
+  document.getElementById("warning").style.display = "block";
+  document.getElementById("warning").style.position = "absolute";
   document.getElementById("warning").textContent = message;
 }
 

@@ -110,6 +110,7 @@ h2{
 }
 
 .video-container {
+  position: relative;
   height: 450px;
   width: 330px;
   border: 2px solid gray;
@@ -123,13 +124,15 @@ h2{
 }
 
 .video-container canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    margin: 0;
-    border-radius: 10px;
-    border: 2px solid gray;
-    display: none;
+  position: absolute;
+  width: inherit;
+  height: inherit;
+  top: -2px;
+  left: -2px;
+  margin: 0;
+  border-radius: 10px;
+  border: 2px solid gray;
+  display: none;
 }
 
 .hanging-btn {

@@ -27,20 +27,26 @@ func GenerateIDCard(templatePath, photoPath, outputPath, name, userID, alamat st
 
 	bgFile, err := os.Open(templatePath)
 	if err != nil {
-		log.Print("template", err)
+		log.Print("template:", err)
 		return err
 	}
 	defer bgFile.Close()
-	bgImg, _, _ := image.Decode(bgFile)
-
+	bgImg, _, err := image.Decode(bgFile)
+	if err != nil {
+		log.Print("background decoder:", err)
+		return err
+	}
 	photoFile, err := os.Open(photoPath)
 	if err != nil {
-		log.Print("file", err)
+		log.Print("file:", err)
 		return err
 	}
 	defer photoFile.Close()
-	photoImg, _, _ := image.Decode(photoFile)
-
+	photoImg, _, err := image.Decode(photoFile)
+	if err != nil {
+		log.Print("image decoder:", err)
+		return err
+	}
 	// TODO:Resize photo
 
 	card := image.NewRGBA(bgImg.Bounds())
@@ -51,12 +57,12 @@ func GenerateIDCard(templatePath, photoPath, outputPath, name, userID, alamat st
 
 	err = drawText(card, name, 240, 818, 32, roboto400, color.Black)
 	if err != nil {
-		log.Print("drawer", err)
+		log.Print("drawer:", err)
 		return err
 	}
 	err = drawText(card, "SIK-"+userID, 240, 862, 28, roboto400, color.Black)
 	if err != nil {
-		log.Print("drawer", err)
+		log.Print("drawer:", err)
 		return err
 	}
 

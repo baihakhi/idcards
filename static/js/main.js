@@ -18,7 +18,7 @@ function getUserbyNik() {
   const nik = document.getElementById("nik").value;
   const userStatus = document.getElementById("dropdown").value;
   switch (userStatus) {
-    case V:
+    case "V":
       statusVal = "Vendor"
       break;
 
@@ -26,7 +26,6 @@ function getUserbyNik() {
       statusVal = "Penyetor"
       break;
   }
-
 
   if (nik.trim() === "") return;
 
@@ -52,6 +51,7 @@ function getUserbyNik() {
         document.querySelector('input[name="rating"]').value =
           user.Rating || "";
         document.querySelector('input[name="notes"]').value = user.Notes || "";
+        loadCanvas(user.Photo)
 
         form.setAttribute("action", "/update");
         formBtn.textContent = "Update " + statusVal;
@@ -65,15 +65,14 @@ function getUserbyNik() {
 // getUserIDbyStatus get current userID by status value
 function getUserIDbyStatus() {
   const userStatus = document.getElementById("dropdown").value;
-switch (userStatus) {
-  case V:
-    statusVal = "Vendor"
-    break;
-
-  default:
-    statusVal = "Penyetor"
-    break;
-}
+  switch (userStatus) {
+    case V:
+      statusVal = "Vendor"
+      break;
+    default:
+      statusVal = "Penyetor"
+      break;
+  }
 
   fetch(`/get-id?status=${encodeURIComponent(userStatus)}`)
     .then((res) => res.json())
@@ -102,8 +101,11 @@ function capture() {
   const canvas = document.getElementById("canvas");
   const photoInput = document.getElementById("photoData");
   const toggleCam = document.getElementById("camera");
+  const ctx = canvas.getContext("2d");
   video.pause();
 
+  canvas.style.display = "none";
+  video.style.display = "block";
   canvas.width = 330;
   canvas.height = 450;
 
@@ -117,10 +119,37 @@ function capture() {
     camPlayed = !camPlayed;
   }
 
-  const ctx = canvas.getContext("2d");
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
   photoInput.value = canvas.toDataURL("image/png");
+}
+
+function loadCanvas(imgSrc) {
+
+  const canvas = document.getElementById("canvas");
+  const photoInput = document.getElementById("photoData");
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+
+  img.crossOrigin = "anonymous";
+  img.src = "http://localhost:8080/"+imgSrc;
+  img.onload = function () {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    try {
+      const dataURL = canvas.toDataURL("image/png");
+      console.log("Data URL length:", dataURL.length);
+      photoInput.value = dataURL;
+    } catch (err) {
+      console.error("Tainted canvas?", err);
+    }
+    canvas.style.display = "block";
+  };
+
+  img.onerror = function (e) {
+      console.error('Failed to load the image.', e);
+  };
+
+  document.getElementById("video").style.display = "none";
 }
 
 function showWarning(message) {
@@ -131,4 +160,5 @@ function showWarning(message) {
 
 function clearWarning() {
   document.getElementById("warning").style.display = "none";
+  document.getElementById("warning").textContent = "";
 }

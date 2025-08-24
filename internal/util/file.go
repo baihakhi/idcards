@@ -6,10 +6,12 @@ import (
 	"strings"
 )
 
-func ImageWriter(data []byte, dir, name, format string) string {
+func ImageWriter(data []byte, dir, name, format string) (string, error) {
 	imgPath := filepath.Join(dir, name+format)
 	webPath := strings.ReplaceAll(imgPath, `\`, `/`)
-	os.WriteFile(imgPath, data, 0644)
+	if err := os.WriteFile(imgPath, data, 0644); err != nil {
+		return "", err
+	}
 
-	return webPath
+	return webPath, nil
 }

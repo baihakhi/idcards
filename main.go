@@ -498,7 +498,7 @@ func generateUserID(status string) (string, error) {
 		return "", err
 	}
 
-	userID := status + fmt.Sprintf("%03d", total+2)
+	userID := status + fmt.Sprintf("%03d", total+50)
 	return userID, nil
 }
 
@@ -594,8 +594,11 @@ func normalizeName(nama string) string {
 	if len(fN[0]) >= 7 && fN[0][:1] == "M" && fN[0][len(fN[0])-2:] == "AD" {
 		fN[0] = "M"
 	}
-	if len(strings.Join(fN[0:3], " ")) >= maxChar-2 {
-		fN[2] = fN[2][:1]
+
+	if len(strings.Join(fN[0:], " ")) >= maxChar-2 {
+		for i := range fN[2:] {
+			fN[i] = fN[i][:1]
+		}
 	}
 	res := strings.Join(fN, " ")
 	if len(res) < maxChar {

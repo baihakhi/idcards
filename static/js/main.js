@@ -10,12 +10,22 @@ navigator.mediaDevices
   .catch(console.error);
 
 let camPlayed = false;
+let statusVal = ""
 
 // getUserbyNik get user detail by NIK inputed
 // update action and method to /update if user exist
 function getUserbyNik() {
   const nik = document.getElementById("nik").value;
-  console.log("send", nik);
+  const userStatus = document.getElementById("dropdown").value;
+  switch (userStatus) {
+    case "V":
+      statusVal = "Vendor"
+      break;
+
+    default:
+      statusVal = "Penyetor"
+      break;
+  }
 
   if (nik.trim() === "") return;
 
@@ -27,7 +37,7 @@ function getUserbyNik() {
       } else {
         const user = data.Data;
         const form = document.querySelector("form");
-        console.log("user id: ", user.ID);
+        const formBtn = document.getElementById("formSubmit")
 
         clearWarning();
         document.getElementById("userIdInput").value = user.ID;
@@ -41,8 +51,10 @@ function getUserbyNik() {
         document.querySelector('input[name="rating"]').value =
           user.Rating || "";
         document.querySelector('input[name="notes"]').value = user.Notes || "";
+        loadCanvas(user.Photo)
 
         form.setAttribute("action", "/update");
+        formBtn.textContent = "Update " + statusVal;
       }
     })
     .catch((err) => {
@@ -52,7 +64,15 @@ function getUserbyNik() {
 
 // getUserIDbyStatus get current userID by status value
 function getUserIDbyStatus() {
-  userStatus = document.getElementById("dropdown").value;
+  const userStatus = document.getElementById("dropdown").value;
+  switch (userStatus) {
+    case V:
+      statusVal = "Vendor"
+      break;
+    default:
+      statusVal = "Penyetor"
+      break;
+  }
 
   fetch(`/get-id?status=${encodeURIComponent(userStatus)}`)
     .then((res) => res.json())
@@ -68,10 +88,11 @@ function getUserIDbyStatus() {
         clearWarning();
         document.getElementById("userId").textContent = userID;
         document.getElementById("userIdInput").value = userID;
+        document.getElementById("formSubmit").textContent = "Simpan " + statusVal
       }
     })
     .catch((err) => {
-      console.error("Error generating user IDK:", err);
+      console.error("Error generating user ID:", err);
     });
 }
 
@@ -80,8 +101,11 @@ function capture() {
   const canvas = document.getElementById("canvas");
   const photoInput = document.getElementById("photoData");
   const toggleCam = document.getElementById("camera");
+  const ctx = canvas.getContext("2d");
   video.pause();
 
+  canvas.style.display = "none";
+  video.style.display = "block";
   canvas.width = 330;
   canvas.height = 450;
 
@@ -95,17 +119,46 @@ function capture() {
     camPlayed = !camPlayed;
   }
 
-  const ctx = canvas.getContext("2d");
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
   photoInput.value = canvas.toDataURL("image/png");
 }
 
+function loadCanvas(imgSrc) {
+
+  const canvas = document.getElementById("canvas");
+  const photoInput = document.getElementById("photoData");
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+
+  img.crossOrigin = "anonymous";
+  img.src = "http://localhost:8080/"+imgSrc;
+  img.onload = function () {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    try {
+      const dataURL = canvas.toDataURL("image/png");
+      console.log("Data URL length:", dataURL.length);
+      photoInput.value = dataURL;
+    } catch (err) {
+      console.error("Tainted canvas?", err);
+    }
+    canvas.style.display = "block";
+  };
+
+  img.onerror = function (e) {
+      console.error('Failed to load the image.', e);
+  };
+
+  document.getElementById("video").style.display = "none";
+}
+
 function showWarning(message) {
-  document.getElementById("warning").style.display = "absolute";
+  document.getElementById("warning").style.display = "block";
+  document.getElementById("warning").style.position = "absolute";
   document.getElementById("warning").textContent = message;
 }
 
 function clearWarning() {
   document.getElementById("warning").style.display = "none";
+  document.getElementById("warning").textContent = "";
 }

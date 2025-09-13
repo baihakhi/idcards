@@ -183,7 +183,7 @@ func (h *UserHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Request) 
 		rating = r.FormValue("rating")
 	}
 	if r.FormValue("notes") != "" {
-		rating = r.FormValue("notes")
+		notes = r.FormValue("notes")
 	}
 
 	formData := map[string]string{

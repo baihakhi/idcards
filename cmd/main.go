@@ -3,16 +3,24 @@ package main
 import (
 	"idcard/internal/config"
 	"idcard/internal/handler"
-	"idcard/internal/migrate"
 	"idcard/internal/repository"
 	"idcard/internal/service"
 	"log"
 	"net/http"
 
+	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
+	// Load environment variables from .env file
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Error loading environtment")
+		return
+	}
+
+	// Initialize the database
 	db, err := config.InitDB("./internal/data/users.db")
 	if err != nil {
 		log.Fatal(err)
@@ -20,9 +28,9 @@ func main() {
 	}
 	defer config.CloseDB()
 
-	if err := migrate.CreateTable(db); err != nil {
-		log.Fatal(err)
-	}
+	// if err := migrate.CreateTable(db); err != nil {
+	// 	log.Fatal(err)
+	// }
 
 	http.Handle("/static/", withCORS(http.StripPrefix("/static/", http.FileServer(http.Dir("static")))))
 	http.Handle("/pdf/", http.StripPrefix("/pdf/", http.FileServer(http.Dir("pdf"))))
@@ -48,6 +56,7 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
+// withCORS is a middleware that adds CORS headers to the response
 func withCORS(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")

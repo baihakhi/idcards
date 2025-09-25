@@ -5,8 +5,11 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
 	"sync"
 	"time"
+
+	_ "github.com/lib/pq"
 )
 
 type DB interface {
@@ -60,7 +63,14 @@ var (
 // InitDB initializes the database connection once.
 func InitDB(dataSourceName string) (DB, error) {
 	once.Do(func() {
-		conn, err := sql.Open("sqlite3", dataSourceName)
+		connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+			getEnv("POSTGRES_HOST", "localhost"),
+			getEnv("POSTGRES_PORT", "5432"), getEnv("POSTGRES_USER", "myuser"),
+			getEnv("POSTGRES_PASSWORD", "mypassword."),
+			getEnv("POSTGRES_DB", "mydatabase"),
+		)
+		log.Println(connStr)
+		conn, err := sql.Open("postgres", connStr)
 		if err != nil {
 			initErr = fmt.Errorf("[DB]Failed to connect to database: %v", err)
 			return
@@ -91,4 +101,11 @@ func CloseDB() {
 			log.Println("[DB]Database connection closed.")
 		}
 	}
+}
+
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
 }

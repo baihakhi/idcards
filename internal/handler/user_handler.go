@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -258,7 +259,10 @@ func (h *UserHandler) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	affected, err := h.UserService.BulkUpsertUser(r.Context(), file)
+	ctx, cancel := context.WithTimeout(r.Context(), util.Timeout)
+	defer cancel()
+
+	affected, err := h.UserService.BulkUpsertUser(ctx, file)
 	if err != nil {
 		log.Println(err)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -266,10 +270,10 @@ func (h *UserHandler) UploadHandler(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{
 		"message":  "Bulk update success",
 		"affected": affected,
 	})
-	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

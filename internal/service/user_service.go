@@ -10,6 +10,7 @@ import (
 	"io"
 	"log"
 	"strconv"
+	"sync"
 )
 
 type (
@@ -125,6 +126,7 @@ func (s *userServ) BulkUpsertUser(ctx context.Context, file io.Reader) (int, err
 	jobs := make(chan model.User)
 	results := make(chan Result)
 	var affected int
+	var wg sync.WaitGroup
 
 	numWorkers := 4
 
@@ -137,11 +139,15 @@ func (s *userServ) BulkUpsertUser(ctx context.Context, file io.Reader) (int, err
 	if err != nil {
 		return 0, fmt.Errorf("failed to begin tx: %w", err)
 	}
+	defer tx.Rollback()
 
 	for range numWorkers {
-		go s.userWorker(ctx, tx, jobs, results)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			s.userWorker(ctx, tx, jobs, results)
+		}()
 	}
-	defer tx.Rollback()
 
 	go func() {
 		for i := 1; i < len(rows); i++ {
@@ -174,10 +180,13 @@ func (s *userServ) BulkUpsertUser(ctx context.Context, file io.Reader) (int, err
 		close(jobs)
 	}()
 
-	for range len(jobs) - 1 {
-		res := <-results
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	for res := range results {
 		if res.Err != nil {
-			tx.Rollback()
 			return 0, fmt.Errorf("bulk update failed: %w", res.Err)
 		}
 		if res.Affected {
@@ -195,7 +204,6 @@ func (s *userServ) BulkUpsertUser(ctx context.Context, file io.Reader) (int, err
 func (s *userServ) userWorker(ctx context.Context, tx *sql.Tx, jobs <-chan model.User, results chan<- Result) {
 	for u := range jobs {
 		res := Result{NIK: u.NIK}
-
 		r, err := s.repo.UpsertUser(ctx, tx, u)
 		if err != nil {
 			res.Err = fmt.Errorf("upsert NIK %s: %w", u.NIK, err)

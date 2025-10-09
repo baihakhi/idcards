@@ -1,7 +1,10 @@
 APP_NAME = idcard-app
 
-run:
-	go run ./cmd
+run-dev:
+	ENV=dev go run ./cmd
+
+run-prod:
+	ENV=prod go run ./cmd
 
 build:
 	docker build -t $(APP_NAME) .

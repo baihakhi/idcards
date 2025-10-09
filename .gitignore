@@ -7,5 +7,8 @@ static/uploads/
 *.exe
 *.xlsx
 *.txt
+*.db
 
 .env
+.env.prod
+.env.dev

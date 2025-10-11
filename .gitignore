@@ -5,3 +5,7 @@ static/uploads/
 
 *.exe
 *.xlsx
+*.db
+
+.env
+.env.*

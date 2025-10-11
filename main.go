@@ -498,7 +498,7 @@ func generateUserID(status string) (string, error) {
 		return "", err
 	}
 
-	userID := status + fmt.Sprintf("%03d", total+50)
+	userID := status + fmt.Sprintf("%03d", total+2)
 	return userID, nil
 }
 

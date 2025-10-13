@@ -266,7 +266,7 @@ func (h *UserHandler) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err)
 		json.NewEncoder(w).Encode(map[string]string{
-			"Error": fmt.Sprintf("picture decoder: %s", err.Error()),
+			"Error": fmt.Sprintf("upload data failed: %s", err.Error()),
 		})
 		return
 	}

@@ -243,6 +243,7 @@ func (h *UserHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Request) 
 		})
 		return
 	}
+
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 

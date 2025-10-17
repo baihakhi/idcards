@@ -176,7 +176,6 @@ func (s *userServ) BulkUpsertUser(ctx context.Context, file io.Reader) (int, err
 				Photo:   foto,
 			}
 			jobs <- u
-			log.Println("job sent: ", u.NIK)
 		}
 		close(jobs)
 	}()
@@ -205,7 +204,6 @@ func (s *userServ) BulkUpsertUser(ctx context.Context, file io.Reader) (int, err
 func (s *userServ) userWorker(ctx context.Context, tx *sql.Tx, jobs <-chan model.User, results chan<- Result) {
 	for u := range jobs {
 		res := Result{NIK: u.NIK}
-		log.Println("upsert: ", u.NIK)
 		r, err := s.repo.UpsertUser(ctx, tx, u)
 		if err != nil {
 			res.Err = fmt.Errorf("upsert NIK %s: %w", u.NIK, err)
@@ -215,7 +213,6 @@ func (s *userServ) userWorker(ctx context.Context, tx *sql.Tx, jobs <-chan model
 		if r > 1 {
 			res.Affected = true
 		}
-		log.Println("upsert done: ", u.NIK)
 		results <- res
 	}
 }

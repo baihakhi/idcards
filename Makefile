@@ -1,7 +1,7 @@
 APP_NAME = idcard-app
 
 run-dev:
-	$e:ENV="dev"; go run ./cmd
+	set ENV=dev && go run ./cmd
 
 run-prod:
 	set ENV=prod && go run ./cmd

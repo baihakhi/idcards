@@ -7,9 +7,10 @@ import (
 	"log"
 	"os"
 	"sync"
-	"time"
 
 	_ "github.com/lib/pq"
+
+	"idcard/internal/util"
 )
 
 type DB interface {
@@ -61,12 +62,27 @@ var (
 )
 
 // InitDB initializes the database connection once.
-func InitDB(dataSourceName string) (DB, error) {
+func InitDB() (DB, error) {
 	once.Do(func() {
-		connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-			getEnv("POSTGRES_HOST", "localhost"),
-			getEnv("POSTGRES_PORT", "5432"), getEnv("POSTGRES_USER", "myuser"),
-			getEnv("POSTGRES_PASSWORD", "mypassword."),
+		// Pool mode (direct, transaction, session)
+		poolMode := getEnv("DB_POOL_MODE", "transaction")
+
+		var host, port string
+		switch poolMode {
+		case "direct":
+			host = getEnv("POSTGRES_HOST", "localhost")
+			port = getEnv("POSTGRES_PORT", "5432") // direct port
+		case "transaction":
+			host = getEnv("POSTGRES_HOST", "localhost")
+			port = getEnv("POSTGRES_PORT", "6543") // tx pooler port
+		default:
+			log.Fatalf("unknown pool mode: %s", poolMode)
+		}
+		connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=require",
+			host,
+			port,
+			getEnv("POSTGRES_USER", "myuser"),
+			getEnv("POSTGRES_PASSWORD", ""),
 			getEnv("POSTGRES_DB", "mydatabase"),
 		)
 		log.Println(connStr)
@@ -78,7 +94,8 @@ func InitDB(dataSourceName string) (DB, error) {
 
 		conn.SetMaxOpenConns(10)
 		conn.SetMaxIdleConns(5)
-		conn.SetConnMaxLifetime(time.Hour)
+		conn.SetConnMaxLifetime(util.ConMaxLifeTime)
+		conn.SetConnMaxIdleTime(util.ConIdleTime)
 
 		if err := conn.Ping(); err != nil {
 			log.Fatalf("[DB]Failed to ping database: %v", err)

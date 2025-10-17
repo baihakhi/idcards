@@ -7,21 +7,25 @@ import (
 	"idcard/internal/service"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/joho/godotenv"
-	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
 	// Load environment variables from .env file
-	err := godotenv.Load()
+	env := os.Getenv("ENV")
+	if env == "" {
+		env = "dev"
+	}
+	err := godotenv.Load(".env." + env)
 	if err != nil {
 		log.Println("Error loading environtment")
 		return
 	}
 
 	// Initialize the database
-	db, err := config.InitDB("./internal/data/users.db")
+	db, err := config.InitDB()
 	if err != nil {
 		log.Fatal(err)
 		return

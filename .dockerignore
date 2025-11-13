@@ -1,0 +1,15 @@
+# flyctl launch added from .gitignore
+**\output\cards
+**\output\pdf
+**\tester
+**\static\uploads
+**\.vscode
+
+**\*.exe
+**\*.xlsx
+**\*.txt
+
+**\.env
+**\.env.prod
+**\.env.dev
+fly.toml

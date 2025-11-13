@@ -9,3 +9,5 @@ static/uploads/
 *.txt
 
 .env
+.env.prod
+.env.dev

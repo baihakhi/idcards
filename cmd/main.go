@@ -7,6 +7,7 @@ import (
 	"idcard/internal/service"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
@@ -14,14 +15,18 @@ import (
 
 func main() {
 	// Load environment variables from .env file
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("Error loading environtment")
-		return
+	appName := os.Getenv("APP_NAME")
+	log.Println("running ", appName)
+	if appName != "" {
+		err := godotenv.Load()
+		if err != nil {
+			log.Println("Error loading environtment")
+			return
+		}
 	}
 
 	// Initialize the database
-	db, err := config.InitDB("./internal/data/users.db")
+	db, err := config.InitDB()
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -41,6 +46,10 @@ func main() {
 	userService := service.NewUserService(userRepo, pdfSvc, exclSvc)
 	userHandler := handler.NewUserHandler(userService)
 
+	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
 	// "/" Page
 	http.HandleFunc("/", userHandler.IndexHandler)
 	http.HandleFunc("/get", userHandler.GetUserHandler)
@@ -53,7 +62,7 @@ func main() {
 	http.HandleFunc("/upload/upsert", userHandler.UploadHandler)
 
 	log.Println("Server running at http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe("0.0.0.0:8080", nil))
 }
 
 // withCORS is a middleware that adds CORS headers to the response

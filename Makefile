@@ -1,7 +1,13 @@
-APP_NAME = idcard-app
+APP_NAME = idcard
 
 run:
-	go run ./cmd
+	powershell -Command "$$env:APP_NAME='$(APP_NAME)'; go run ./cmd"
+
+run-dev:
+	set ENV=dev && go run ./cmd
+
+run-prod:
+	set ENV=prod && go run ./cmd
 
 build:
 	docker build -t $(APP_NAME) .

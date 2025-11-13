@@ -7,9 +7,10 @@ import (
 	"log"
 	"os"
 	"sync"
-	"time"
 
 	_ "github.com/lib/pq"
+
+	"idcard/internal/util"
 )
 
 type DB interface {
@@ -93,7 +94,8 @@ func InitDB() (DB, error) {
 
 		conn.SetMaxOpenConns(10)
 		conn.SetMaxIdleConns(5)
-		conn.SetConnMaxLifetime(time.Hour)
+		conn.SetConnMaxLifetime(util.ConMaxLifeTime)
+		conn.SetConnMaxIdleTime(util.ConIdleTime)
 
 		if err := conn.Ping(); err != nil {
 			log.Fatalf("[DB]Failed to ping database: %v via %s", err, poolMode)

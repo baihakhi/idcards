@@ -66,7 +66,7 @@ function getUserbyNik() {
 function getUserIDbyStatus() {
   const userStatus = document.getElementById("dropdown").value;
   switch (userStatus) {
-    case V:
+    case "V":
       statusVal = "Vendor"
       break;
     default:
@@ -77,7 +77,6 @@ function getUserIDbyStatus() {
   fetch(`/get-id?status=${encodeURIComponent(userStatus)}`)
     .then((res) => res.json())
     .then((data) => {
-      console.log("error", data.Error);
 
       if (data.Error) {
         showWarning("⚠️ " + data.Error);

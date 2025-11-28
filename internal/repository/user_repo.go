@@ -70,6 +70,7 @@ func (r *userRepo) GetLastUserId(ctx context.Context, status string) (string, er
 	)
 
 	err := r.db.QueryRow("SELECT ID, created_at FROM users where status=$1 ORDER BY created_at DESC LIMIT 1", status).Scan(&uID, &tgl)
+
 	return uID, err
 }
 

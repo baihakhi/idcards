@@ -14,14 +14,13 @@ import (
 
 func main() {
 	// Load environment variables from .env file
-	env := os.Getenv("ENV")
-	if env == "" {
-		env = "dev"
-	}
-	err := godotenv.Load(".env." + env)
-	if err != nil {
-		log.Println("Error loading environtment")
-		return
+	appName := os.Getenv("APP_NAME")
+	if appName != "" {
+		err := godotenv.Load()
+		if err != nil {
+			log.Println("Error loading environtment")
+			return
+		}
 	}
 
 	// Initialize the database
@@ -45,6 +44,10 @@ func main() {
 	userService := service.NewUserService(userRepo, pdfSvc, exclSvc)
 	userHandler := handler.NewUserHandler(userService)
 
+	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
 	// "/" Page
 	http.HandleFunc("/", userHandler.IndexHandler)
 	http.HandleFunc("/get", userHandler.GetUserHandler)
@@ -57,7 +60,7 @@ func main() {
 	http.HandleFunc("/upload/upsert", userHandler.UploadHandler)
 
 	log.Println("Server running at http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe("0.0.0.0:8080", nil))
 }
 
 // withCORS is a middleware that adds CORS headers to the response

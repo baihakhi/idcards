@@ -1,4 +1,7 @@
-APP_NAME = idcard-app
+APP_NAME = idcard
+
+run:
+	powershell -Command "$$env:APP_NAME='$(APP_NAME)'; go run ./cmd"
 
 run-dev:
 	set ENV=dev && go run ./cmd

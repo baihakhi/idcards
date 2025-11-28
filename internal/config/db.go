@@ -85,20 +85,19 @@ func InitDB() (DB, error) {
 			getEnv("POSTGRES_PASSWORD", ""),
 			getEnv("POSTGRES_DB", "mydatabase"),
 		)
-		log.Println(connStr)
 		conn, err := sql.Open("postgres", connStr)
 		if err != nil {
 			initErr = fmt.Errorf("[DB]Failed to connect to database: %v", err)
 			return
 		}
 
-		conn.SetMaxOpenConns(10)
-		conn.SetMaxIdleConns(5)
+		conn.SetMaxOpenConns(util.ParseInt(getEnv("MAX_OPEN_CONNS", "5")))
+		conn.SetMaxIdleConns(util.ParseInt(getEnv("MAX_IDLE_CONNS", "2")))
 		conn.SetConnMaxLifetime(util.ConMaxLifeTime)
 		conn.SetConnMaxIdleTime(util.ConIdleTime)
 
 		if err := conn.Ping(); err != nil {
-			log.Fatalf("[DB]Failed to ping database: %v", err)
+			log.Fatalf("[DB]Failed to ping database: %v via %s", err, poolMode)
 			initErr = fmt.Errorf("[DB]Failed to ping database: %v", err)
 			return
 		}

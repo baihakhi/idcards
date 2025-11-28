@@ -15,7 +15,6 @@ import (
 func main() {
 	// Load environment variables from .env file
 	appName := os.Getenv("APP_NAME")
-	log.Println("running ", appName)
 	if appName != "" {
 		err := godotenv.Load()
 		if err != nil {

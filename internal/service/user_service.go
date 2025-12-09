@@ -4,11 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"idcard/internal/config"
 	"idcard/internal/model"
 	"idcard/internal/repository"
 	"idcard/internal/util"
 	"io"
 	"log"
+	"os"
 	"strconv"
 	"sync"
 )
@@ -23,9 +25,10 @@ type (
 		BulkUpsertUser(ctx context.Context, file io.Reader) (int, error)
 	}
 	userServ struct {
-		repo     repository.UserRepository
-		pdfSvc   PdfService
-		excelSvc ExcelService
+		repo          repository.UserRepository
+		storageClient config.Client
+		pdfSvc        PdfService
+		excelSvc      ExcelService
 	}
 
 	Result struct {
@@ -39,8 +42,8 @@ const (
 	templatePath = util.PathToTempl + "kartu.png"
 )
 
-func NewUserService(repo repository.UserRepository, pdf PdfService, excel ExcelService) UserService {
-	return &userServ{repo: repo, pdfSvc: pdf, excelSvc: excel}
+func NewUserService(repo repository.UserRepository, pdf PdfService, excel ExcelService, storage config.Client) UserService {
+	return &userServ{repo: repo, pdfSvc: pdf, excelSvc: excel, storageClient: storage}
 }
 
 func (s *userServ) CreateUserAction(ctx context.Context, u *model.User) error {
@@ -51,6 +54,19 @@ func (s *userServ) CreateUserAction(ctx context.Context, u *model.User) error {
 	outputPath := util.PathToCard + u.ID + ".png"
 	if err := util.GenerateIDCard(templatePath, u.Photo, outputPath, util.NormalizeName(u.Name), u.ID, u.Address); err != nil {
 		return err
+	}
+	photoFile, err := os.Open(u.Photo)
+	if err != nil {
+		log.Print("file:", err)
+		return err
+	}
+	defer photoFile.Close()
+	ext := util.GetFileFormat(u.Photo)
+	mime := util.GetMimeType(u.Photo)
+
+	if err := s.storageClient.Upload(ctx, "images/"+u.ID+"."+ext, mime, photoFile); err != nil {
+		log.Println("storage error: ", err)
+		return (err)
 	}
 
 	if err := s.excelSvc.UpdateExcel(u); err != nil {
@@ -106,6 +122,20 @@ func (s *userServ) UpdateUserAction(ctx context.Context, user *model.User) error
 	if err := util.GenerateIDCard(templatePath, user.Photo, outputPath, util.NormalizeName(user.Name), user.ID, user.Address); err != nil {
 		log.Print("id generator: ", err)
 		return err
+	}
+
+	photoFile, err := os.Open(user.Photo)
+	if err != nil {
+		log.Print("file: ", err)
+		return err
+	}
+	defer photoFile.Close()
+	ext := util.GetFileFormat(user.Photo)
+	mime := util.GetMimeType(user.Photo)
+
+	if err := s.storageClient.Upload(ctx, "images/"+user.ID+"."+ext, mime, photoFile); err != nil {
+		log.Println("storage error: ", err)
+		return (err)
 	}
 
 	if err := s.excelSvc.UpdateExcel(user); err != nil {

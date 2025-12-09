@@ -59,8 +59,9 @@ func StringtoByte(str string) ([]byte, error) {
 	return imgByte, nil
 }
 
-func GetFileFormat(filePath string) string {
-	filename := strings.Split(filePath, "/")
-	fileFormat := strings.Split(filename[len(filename)-1], ".")[2]
-	return fileFormat
-}
+// func GetFileFormat(filePath string) string {
+// 	filename := strings.Split(filePath, "/")
+// 	fileFormat := strings.Split(filename[len(filename)-1], ".")[2]
+// 	return fileFormat
+// }
+// --- IGNORE ---

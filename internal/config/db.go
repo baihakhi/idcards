@@ -27,6 +27,12 @@ type RealDB struct {
 	conn *sql.DB
 }
 
+var (
+	dbInstance DB
+	once       sync.Once
+	initErr    error
+)
+
 func (r *RealDB) Query(query string, args ...any) (*sql.Rows, error) {
 	return r.conn.Query(query, args...)
 }
@@ -54,12 +60,6 @@ func (r RealDB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, erro
 func (r *RealDB) Close() error {
 	return r.conn.Close()
 }
-
-var (
-	dbInstance DB
-	once       sync.Once
-	initErr    error
-)
 
 // InitDB initializes the database connection once.
 func InitDB() (DB, error) {

@@ -1,6 +1,7 @@
 package util
 
 import (
+	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -33,4 +34,12 @@ func ServeDownloadables(w http.ResponseWriter, r *http.Request, filePath string)
 
 	http.ServeContent(w, r, filePath, time.Now(), file)
 	return nil
+}
+
+func GetFileFormat(filePath string) string {
+	return strings.ToLower(filepath.Ext(filePath))
+}
+
+func GetMimeType(filePath string) string {
+	return mime.TypeByExtension(GetFileFormat(filePath))
 }

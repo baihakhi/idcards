@@ -30,13 +30,15 @@ func NewUserHandler(svc service.UserService) *UserHandler {
 
 func (h *UserHandler) IndexHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	limitQ := r.URL.Query().Get("limit")
+	qParam := r.URL.Query()
+	limitQ := qParam.Get("limit")
+	lastID := qParam.Get("success")
+	log.Println("lastID:", lastID)
+
 	limit, err := strconv.Atoi(limitQ)
 	if err != nil {
-		log.Println(err)
 		limit = 12 // default 12
 	}
-
 	ctx := r.Context()
 	users, err := h.UserService.GetUserList(ctx, uint8(limit))
 	if err != nil {
@@ -44,19 +46,18 @@ func (h *UserHandler) IndexHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), 500)
 		return
 	}
-
-	lastUID, err := h.UserService.GenerateUserID(ctx, "S")
+	newID, err := h.UserService.GenerateUserID(ctx, "S")
 	if err != nil {
 		log.Println(err)
 		json.NewEncoder(w).Encode(map[string]string{"Error": fmt.Sprintf("error generating new ID for: %s", err.Error())})
 		return
 	}
-
 	tmpl.ExecuteTemplate(w, "index.html", map[string]any{
+		"LastID": lastID,
 		"Action": "/create",
 		"Method": "POST",
-		"UserID": lastUID,
-		"User":   users,
+		"UserID": newID,
+		"Users":  users,
 	})
 }
 
@@ -142,16 +143,8 @@ func (h *UserHandler) CreateUserHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	imgPath, err := util.ImageWriter(imgByte, `static\uploads`, userId, ".png")
-	if err != nil {
-		log.Println(err)
-		json.NewEncoder(w).Encode(map[string]string{
-			"Error": fmt.Sprintf("image writer: %s", err.Error()),
-		})
-		return
-	}
 	err = h.UserService.CreateUserAction(ctx, &model.User{
-		ID:      formData["id"],
+		ID:      userId,
 		NIK:     formData["nik"],
 		Name:    formData["name"],
 		Status:  formData["status"],
@@ -159,16 +152,17 @@ func (h *UserHandler) CreateUserHandler(w http.ResponseWriter, r *http.Request) 
 		Address: formData["address"],
 		Rating:  util.ParseInt(rating),
 		Notes:   formData["notes"],
-		Photo:   imgPath,
-	})
+		Photo:   fmt.Sprintf("static/uploads/%s.png", userId),
+	}, imgByte)
 	if err != nil {
 		log.Println(err)
-		json.NewEncoder(w).Encode(map[string]string{
-			"Error": fmt.Sprintf("db connection: %s", err.Error()),
+		json.NewEncoder(w).Encode(map[string]any{
+			"Error": fmt.Sprintf("could not create user: %s", err),
 		})
 		return
 	}
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+
+	http.Redirect(w, r, "/?success="+formData["id"], http.StatusSeeOther)
 }
 
 func (h *UserHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -216,14 +210,7 @@ func (h *UserHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	imgPath, err := util.ImageWriter(imgByte, `static\uploads`, formData["id"], ".png")
-	if err != nil {
-		log.Println(err)
-		json.NewEncoder(w).Encode(map[string]string{
-			"Error": fmt.Sprintf("image writer: %s", err.Error()),
-		})
-		return
-	}
+	imgPath := fmt.Sprintf("static/uploads/%s.png", formData["id"])
 
 	err = h.UserService.UpdateUserAction(ctx, &model.User{
 		ID:      formData["id"],
@@ -235,7 +222,7 @@ func (h *UserHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Request) 
 		Rating:  util.ParseInt(rating),
 		Notes:   formData["notes"],
 		Photo:   imgPath,
-	})
+	}, imgByte)
 	if err != nil {
 		log.Println(err)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -244,7 +231,38 @@ func (h *UserHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	http.Redirect(w, r, "/?success="+formData["id"], http.StatusSeeOther)
+}
+
+func (h *UserHandler) DownloadRedirecthandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	log.Println("download accessed")
+	queryParams := r.URL.Query()
+	fileType := queryParams.Get("type")
+	userID := queryParams.Get("uid")
+	var filePath, fileName string
+
+	switch fileType {
+	case "card":
+		fileName = fmt.Sprintf("%s.png", userID)
+		filePath = fmt.Sprintf("%s%s.png", util.PathToCard, userID)
+	case "form":
+		fileName = fmt.Sprintf("%s.pdf", userID)
+		filePath = fmt.Sprintf("%s%s.pdf", util.PathToContract, userID)
+	default:
+		json.NewEncoder(w).Encode(map[string]string{
+			"Error": "invalid download type",
+		})
+		return
+	}
+	log.Println("downloading files", filePath)
+	if err := util.ServeDownloadables(w, r, filePath, fileName); err != nil {
+		log.Println(err)
+		json.NewEncoder(w).Encode(map[string]string{
+			"Error": fmt.Sprintf("could not serve user%s %s", fileType, err.Error()),
+		})
+		return
+	}
 }
 
 func (h *UserHandler) UploadRedirecthandler(w http.ResponseWriter, r *http.Request) {

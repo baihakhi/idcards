@@ -7,6 +7,14 @@ import (
 	"strings"
 )
 
+const (
+	PathToAssets   string = "static/assets/"
+	PathToCard     string = "tmp/idcards/"
+	PathToContract string = "tmp/contracts/"
+
+	pathToFont string = PathToAssets + "fonts/"
+)
+
 func ParseInt(s string) int {
 	i, err := strconv.Atoi(strings.TrimSpace(s))
 	if err != nil {

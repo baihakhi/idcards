@@ -44,7 +44,6 @@ h2{
   justify-content: space-between;
   max-width: 934px;
   max-height: 946px;
-  padding: 20px 10px;
 }
 
 .left-container {
@@ -52,11 +51,34 @@ h2{
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  margin: 0 5px;
+}
+
+.right-container {
+  width: 50%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  margin: 0 5px;
 }
 
 .left-container > input {
   height: 20px;
   font-size: large;
+}
+
+.pop-up {
+    max-width: 600px;
+    position: fixed;
+    top: 40%;
+    left: 48%;
+    transform: translate(-50%, -50%);
+    background-color: var(--color-off-white);
+    border: 2px solid var(--color-dark-green);
+    border-radius: 10px;
+    padding: 20px 20px 10px 20px;
+    display: none;
+    z-index: 1000;
 }
 
 .user-banner {
@@ -135,17 +157,18 @@ h2{
   display: none;
 }
 
-.hanging-btn {
-  display: inline;
-  position: absolute;
-  left: 10px;
-  background-color: var(--color-secondary);
+.card-container {
+  margin-bottom: 10px;
+  padding: 10px 5px 5px 5px;
+  border: #BCB88A 1px dashed;
+  border-color: var(--color-sage);
 }
 
-.hanging-btn:hover {
-  background-color: var(--color-secondary-hover);
+.card-container img {
+  width: 100%;
+  border-radius: 5px;
+  margin-bottom: 5px;
 }
-
 
 @media only screen and (max-width: 1100px) {
   form {

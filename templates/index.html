@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ID Card Generator</title>
+    <link rel="shortcut icon" href="/static/assets/images/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="/static/css/main.css" />
     <link rel="stylesheet" href="/static/css/button.css" />
     <script src="/static/js/main.js"></script>
@@ -61,7 +62,7 @@
             </div>
             <br />
             <button type="button" onclick="capture()" id="camera">
-              📸 Camera</button
+              📸 Kamera</button
             ><br />
             <input type="hidden" name="photo" id="photoData" />
           </div>
@@ -70,11 +71,11 @@
       <div class="user-list">
         <h2>Daftar Pihak Ketiga</h2>
         <div class="list">
-          {{range .User}}
+          {{range .Users}}
           <div>
             <strong>SIK-{{.ID}}</strong>
             <p>{{.Name}}</p>
-            <img src="/{{.Photo}}" width="160" />
+            <img src="/{{.Photo}}" alt="{{ .ID }}" width="160" />
           </div>
           {{else}}
           <p>No users yet.</p>
@@ -82,6 +83,7 @@
         </div>
       </div>
     </div>
+<p>{{ .LastID }}</p>
     <div
       id="warning"
       style="
@@ -95,29 +97,39 @@
     >
       ⚠️ {{ .Error }}
     </div>
+    {{if .LastID }}
+    <div class="pop-up" id="popup">
+      <button class="close-btn" onclick="closePopup()">×</button>
+      <h2 id="generatedId"></h2>
+      <div class="split-container">
+        <div class="left-container">
+          <div class="card-container">
+            <img src="/static/assets/images/idcard.png" alt="idcard-back" width="200" />
+            <button type="button" class="secondary-btn" id="idcard" onclick="downloadGeneratedFile('{{ .LastID }}', 'card')">UNDUH</button>
+          </div>
+        </div>
+        <div class="right-container">
+          <div class="card-container">
+            <img src="/static/assets/images/contract.png" alt="user contract" width="200" />
+            <button type="button" class="secondary-btn" id="contract" onclick="downloadGeneratedFile('{{ .LastID }}', 'form')">UNDUH</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {{end}}
   </body>
 </html>
 
 <script>
   document.getElementById("userId").textContent =
     document.getElementById("userIdInput").value;
+  
+  const queryString = window.location.search; 
+  const urlParams = new URLSearchParams(queryString);
+  const successParam = urlParams.get('success');
 
-  // document
-  //   .getElementById("userForm")
-  //   .addEventListener("submit", async (event) => {
-  //     event.preventDefault();
-  //     const formData = new FormData();
-
-  //     try {
-  //       const response = await fetch("/create", {
-  //         method: "POST",
-  //         body: formData,
-  //       }).then(() => {
-  //         window.open("pdf/form.pdf");
-  //       });
-  //     } catch (error) {
-  //       console.error("Error uploading file:", error);
-  //       alert("An error occurred while uploading the file.");
-  //     }
-  //   });
+  if (successParam != 'false' && successParam != null) {
+    document.getElementById('generatedId').textContent = 'SIK-' + successParam;
+    document.getElementById('popup').style.display = 'block';
+  }
 </script>

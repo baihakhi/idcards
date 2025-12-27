@@ -1,6 +1,8 @@
 package util
 
 import (
+	"io"
+	"log"
 	"mime"
 	"net/http"
 	"os"
@@ -19,20 +21,34 @@ func ImageWriter(data []byte, dir, name, format string) (string, error) {
 	return webPath, nil
 }
 
-func ServeDownloadables(w http.ResponseWriter, r *http.Request, filePath string) error {
+func ServeDownloadables(w http.ResponseWriter, r *http.Request, filePath, filename string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	mimeType := GetFileFormat(filePath)
+	// Read first 512 bytes to detect MIME type
+	buf := make([]byte, 512)
+	n, err := file.Read(buf)
+	if err != nil && err != io.EOF {
+		return err
+	}
+	mimeType := http.DetectContentType(buf[:n])
+	log.Println("Downloading file with MIME type:", mimeType)
 
-	// Set the headers to force download
-	w.Header().Set("Content-Disposition", "attachment; filename="+filePath)
-	w.Header().Set("Content-Type", "application/"+mimeType)
+	// Set headers
+	w.Header().Set("Content-Disposition", "attachment; filename="+filename)
+	// Force download by setting generic MIME type for known displayable types
+	if strings.HasPrefix(mimeType, "image/") || strings.HasPrefix(mimeType, "text/") {
+		w.Header().Set("Content-Type", "application/octet-stream")
+		log.Println("Set Content-Type to application/octet-stream to force download")
+	} else {
+		w.Header().Set("Content-Type", mimeType)
+	}
 
-	http.ServeContent(w, r, filePath, time.Now(), file)
+	file.Seek(0, 0)
+	http.ServeContent(w, r, filename, time.Now(), file)
 	return nil
 }
 

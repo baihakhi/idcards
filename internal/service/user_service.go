@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
@@ -9,19 +10,17 @@ import (
 	"idcard/internal/repository"
 	"idcard/internal/util"
 	"io"
-	"log"
-	"os"
 	"strconv"
 	"sync"
 )
 
 type (
 	UserService interface {
-		CreateUserAction(ctx context.Context, u *model.User) error
+		CreateUserAction(ctx context.Context, u *model.User, photo []byte) error
 		GenerateUserID(ctx context.Context, status string) (string, error)
 		GetUserList(ctx context.Context, limit uint8) (*[]model.User, error)
 		GetUserByNik(ctx context.Context, nik string) (*model.User, error)
-		UpdateUserAction(ctx context.Context, user *model.User) error
+		UpdateUserAction(ctx context.Context, user *model.User, photo []byte) error
 		BulkUpsertUser(ctx context.Context, file io.Reader) (int, error)
 	}
 	userServ struct {
@@ -39,44 +38,22 @@ type (
 )
 
 const (
-	templatePath = util.PathToTempl + "kartu.png"
+	templatePath = util.PathToAssets + "kartu.png"
 )
 
 func NewUserService(repo repository.UserRepository, pdf PdfService, excel ExcelService, storage config.Client) UserService {
 	return &userServ{repo: repo, pdfSvc: pdf, excelSvc: excel, storageClient: storage}
 }
 
-func (s *userServ) CreateUserAction(ctx context.Context, u *model.User) error {
+func (s *userServ) CreateUserAction(ctx context.Context, u *model.User, photo []byte) error {
 	if err := s.repo.Create(ctx, u); err != nil {
 		return err
 	}
 
-	outputPath := util.PathToCard + u.ID + ".png"
-	if err := util.GenerateIDCard(templatePath, u.Photo, outputPath, util.NormalizeName(u.Name), u.ID, u.Address); err != nil {
-		return err
-	}
-	photoFile, err := os.Open(u.Photo)
+	err := s.imageSequenceAction(ctx, u, photo)
 	if err != nil {
-		log.Print("file:", err)
 		return err
 	}
-	defer photoFile.Close()
-	ext := util.GetFileFormat(u.Photo)
-	mime := util.GetMimeType(u.Photo)
-
-	if err := s.storageClient.Upload(ctx, "images/"+u.ID+"."+ext, mime, photoFile); err != nil {
-		log.Println("storage error: ", err)
-		return (err)
-	}
-
-	if err := s.excelSvc.UpdateExcel(u); err != nil {
-		return err
-	}
-
-	if err := s.pdfSvc.PrintPDF(u); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -112,42 +89,15 @@ func (s *userServ) GetUserByNik(ctx context.Context, nik string) (*model.User, e
 	return u, err
 }
 
-func (s *userServ) UpdateUserAction(ctx context.Context, user *model.User) error {
-	if err := s.repo.UpdateUser(ctx, user); err != nil {
-		log.Print("db: ", err)
+func (s *userServ) UpdateUserAction(ctx context.Context, u *model.User, photo []byte) error {
+	if err := s.repo.UpdateUser(ctx, u); err != nil {
 		return err
 	}
 
-	outputPath := util.PathToCard + user.ID + ".png"
-	if err := util.GenerateIDCard(templatePath, user.Photo, outputPath, util.NormalizeName(user.Name), user.ID, user.Address); err != nil {
-		log.Print("id generator: ", err)
-		return err
-	}
-
-	photoFile, err := os.Open(user.Photo)
+	err := s.imageSequenceAction(ctx, u, photo)
 	if err != nil {
-		log.Print("file: ", err)
 		return err
 	}
-	defer photoFile.Close()
-	ext := util.GetFileFormat(user.Photo)
-	mime := util.GetMimeType(user.Photo)
-
-	if err := s.storageClient.Upload(ctx, "images/"+user.ID+"."+ext, mime, photoFile); err != nil {
-		log.Println("storage error: ", err)
-		return (err)
-	}
-
-	if err := s.excelSvc.UpdateExcel(user); err != nil {
-		log.Print("excel: ", err)
-		return err
-	}
-
-	if err := s.pdfSvc.PrintPDF(user); err != nil {
-		log.Print("pdf: ", err)
-		return err
-	}
-
 	return nil
 }
 
@@ -245,4 +195,33 @@ func (s *userServ) userWorker(ctx context.Context, tx *sql.Tx, jobs <-chan model
 		}
 		results <- res
 	}
+}
+
+func (s *userServ) imageSequenceAction(ctx context.Context, u *model.User, imgByte []byte) error {
+	photoFile := bytes.NewReader(imgByte)
+	ext := util.GetFileFormat(u.Photo)
+	mime := util.GetMimeType(u.Photo)
+	if err := util.GenerateIDCard(templatePath, util.NormalizeName(u.Name), u.ID, u.Address, fmt.Sprintf("%s%s.png", util.PathToCard, u.ID), photoFile); err != nil {
+		err = fmt.Errorf("generate ID card: %w", err)
+		return err
+	}
+
+	if err := s.pdfSvc.PrintPDF(u, fmt.Sprintf("%s%s.pdf", util.PathToContract, u.ID)); err != nil {
+		err = fmt.Errorf("generate PDF: %w", err)
+		return err
+	}
+
+	// Upload user photo to storage
+	if err := s.storageClient.Upload(ctx, "images/"+u.ID+"."+ext, mime, photoFile); err != nil {
+		err = fmt.Errorf("upload photo: %w", err)
+		return err
+	}
+
+	// --TO BE REMOVED LATER--
+	if err := s.excelSvc.UpdateExcel(u); err != nil {
+		err = fmt.Errorf("update excel: %w", err)
+		return err
+	}
+
+	return nil
 }

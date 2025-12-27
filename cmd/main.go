@@ -77,6 +77,9 @@ func main() {
 	http.HandleFunc("/upload", userHandler.UploadRedirecthandler)
 	http.HandleFunc("/upload/upsert", userHandler.UploadHandler)
 
+	// "/download" Page
+	http.HandleFunc("/download", userHandler.DownloadRedirecthandler)
+
 	log.Println("Server running at http://0.0.0.0:8080")
 	log.Fatal(http.ListenAndServe("0.0.0.0:8080", nil))
 }

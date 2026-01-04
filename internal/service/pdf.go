@@ -3,7 +3,6 @@ package service
 import (
 	"fmt"
 	"idcard/internal/model"
-	"os"
 	"time"
 
 	"github.com/jung-kurt/gofpdf"
@@ -12,7 +11,7 @@ import (
 
 type (
 	PdfService interface {
-		PrintPDF(u *model.User) error
+		PrintPDF(user *model.User, outputPath string) error
 	}
 
 	pdfSvc struct{}
@@ -22,7 +21,7 @@ func NewPdfService() PdfService {
 	return &pdfSvc{}
 }
 
-func (s *pdfSvc) PrintPDF(user *model.User) error {
+func (s *pdfSvc) PrintPDF(user *model.User, outputPath string) error {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.SetTitle("Formulir Pendaftaran Penyetor Afval", false)
 	pdf.AddPage()
@@ -81,9 +80,5 @@ func (s *pdfSvc) PrintPDF(user *model.User) error {
 	pdf.CellFormat(0, 6, user.Name, "", 1, "R", false, 0, "")
 
 	// Output
-	if err := os.MkdirAll("output/pdf", os.ModePerm); err != nil {
-		return err
-	}
-	filename := fmt.Sprintf("output/pdf/form_%s.pdf", user.ID)
-	return pdf.OutputFileAndClose(filename)
+	return pdf.OutputFileAndClose(outputPath)
 }

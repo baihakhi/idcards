@@ -12,3 +12,39 @@ button {
 button:hover {
     background-color: var(--color-primary-hover);
 }
+
+button.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: var(--color-accent);
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    font-size: medium;
+    padding: 0;
+    line-height: 30px;
+    text-align: center;
+}
+
+.secondary-btn {
+  background-color: var(--color-secondary);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  font-size: medium;
+  cursor: pointer;
+  margin: 5px;
+}
+
+.hanging-btn {
+  display: inline;
+  position: absolute;
+  left: 10px;
+  background-color: var(--color-secondary);
+}
+
+.hanging-btn:hover {
+  background-color: var(--color-secondary-hover);
+}

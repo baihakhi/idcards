@@ -1,5 +1,6 @@
 output/cards/
 output/pdf/
+tmp/*
 tester/
 static/uploads/
 .vscode/

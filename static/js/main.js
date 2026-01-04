@@ -161,3 +161,20 @@ function clearWarning() {
   document.getElementById("warning").style.display = "none";
   document.getElementById("warning").textContent = "";
 }
+
+function closePopup() {
+  document.getElementById("popup").style.display = "none";
+}
+
+function downloadGeneratedFile(userID, fileType) {
+  const url = `/download?uid=${encodeURIComponent(userID)}&type=${encodeURIComponent(fileType)}`;
+  fetch(url)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return response.blob();
+    })
+
+  window.location.href = url;
+}

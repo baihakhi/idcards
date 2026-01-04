@@ -1,6 +1,7 @@
 package util
 
 import (
+	"bytes"
 	"image"
 	"image/color"
 	"image/draw"
@@ -14,14 +15,7 @@ import (
 	"golang.org/x/image/math/fixed"
 )
 
-const (
-	PathToTempl string = "static/assets/"
-	PathToCard  string = "output/cards/idcards/"
-
-	pathToFont string = "static/assets/fonts/"
-)
-
-func GenerateIDCard(templatePath, photoPath, outputPath, name, userID, alamat string) error {
+func GenerateIDCard(templatePath, name, userID, alamat, outputPath string, photoFile *bytes.Reader) error {
 	roboto200 := pathToFont + "Roboto/static/Roboto-Light.ttf"
 	roboto400 := pathToFont + "Roboto/static/Roboto-Regular.ttf"
 
@@ -36,12 +30,7 @@ func GenerateIDCard(templatePath, photoPath, outputPath, name, userID, alamat st
 		log.Print("background decoder:", err)
 		return err
 	}
-	photoFile, err := os.Open(photoPath)
-	if err != nil {
-		log.Print("file:", err)
-		return err
-	}
-	defer photoFile.Close()
+
 	photoImg, _, err := image.Decode(photoFile)
 	if err != nil {
 		log.Print("image decoder:", err)

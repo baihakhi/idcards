@@ -1,6 +1,7 @@
 output/cards/
 output/pdf/
-tmp/*
+tmp/contracts/*
+tmp/idcards/*
 tester/
 static/uploads/
 .vscode/

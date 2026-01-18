@@ -16,6 +16,11 @@ const (
 	EnvCFSecretKey = "CLOUDFLARE_SECRET_KEY"
 	EnvCFEndpoint  = "CLOUDFLARE_ENDPOINT"
 	EnvCFBucket    = "CLOUDFLARE_BUCKET_NAME"
+	EnvBucketUrl   = "BUCKET_URL"
+)
+
+var (
+	BucketURL string
 )
 
 type (
@@ -44,6 +49,7 @@ func NewStorageClient(client *s3.Client, bucket string) *storageClient {
 }
 
 func LoadStorageConfig() (*StorageConfig, error) {
+	BucketURL = getEnv(EnvBucketUrl, "")
 	c := &StorageConfig{
 		CloudflareAccessKey: getEnv(EnvCFAccessKey, ""),
 		CloudflareSecretKey: getEnv(EnvCFSecretKey, ""),

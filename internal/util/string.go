@@ -9,6 +9,7 @@ import (
 
 const (
 	PathToAssets   string = "static/assets/"
+	PathToUploads  string = "uploads/"
 	PathToCard     string = "tmp/idcards/"
 	PathToContract string = "tmp/contracts/"
 

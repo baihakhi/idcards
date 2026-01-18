@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"idcard/internal/config"
 	"idcard/internal/model"
 	"idcard/internal/service"
 	"idcard/internal/util"
@@ -33,7 +34,6 @@ func (h *UserHandler) IndexHandler(w http.ResponseWriter, r *http.Request) {
 	qParam := r.URL.Query()
 	limitQ := qParam.Get("limit")
 	lastID := qParam.Get("success")
-	log.Println("lastID:", lastID)
 
 	limit, err := strconv.Atoi(limitQ)
 	if err != nil {
@@ -152,7 +152,7 @@ func (h *UserHandler) CreateUserHandler(w http.ResponseWriter, r *http.Request) 
 		Address: formData["address"],
 		Rating:  util.ParseInt(rating),
 		Notes:   formData["notes"],
-		Photo:   fmt.Sprintf("static/uploads/%s.png", userId),
+		Photo:   fmt.Sprintf("%s/%s%s.png", config.BucketURL, util.PathToUploads, userId),
 	}, imgByte)
 	if err != nil {
 		log.Println(err)
@@ -210,7 +210,7 @@ func (h *UserHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	imgPath := fmt.Sprintf("static/uploads/%s.png", formData["id"])
+	imgPath := fmt.Sprintf("%s/%s%s.png", config.BucketURL, util.PathToUploads, formData["id"])
 
 	err = h.UserService.UpdateUserAction(ctx, &model.User{
 		ID:      formData["id"],
@@ -236,7 +236,6 @@ func (h *UserHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Request) 
 
 func (h *UserHandler) DownloadRedirecthandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	log.Println("download accessed")
 	queryParams := r.URL.Query()
 	fileType := queryParams.Get("type")
 	userID := queryParams.Get("uid")
@@ -255,7 +254,6 @@ func (h *UserHandler) DownloadRedirecthandler(w http.ResponseWriter, r *http.Req
 		})
 		return
 	}
-	log.Println("downloading files", filePath)
 	if err := util.ServeDownloadables(w, r, filePath, fileName); err != nil {
 		log.Println(err)
 		json.NewEncoder(w).Encode(map[string]string{

@@ -2,7 +2,6 @@ package util
 
 import (
 	"io"
-	"log"
 	"mime"
 	"net/http"
 	"os"
@@ -35,14 +34,12 @@ func ServeDownloadables(w http.ResponseWriter, r *http.Request, filePath, filena
 		return err
 	}
 	mimeType := http.DetectContentType(buf[:n])
-	log.Println("Downloading file with MIME type:", mimeType)
 
 	// Set headers
 	w.Header().Set("Content-Disposition", "attachment; filename="+filename)
 	// Force download by setting generic MIME type for known displayable types
 	if strings.HasPrefix(mimeType, "image/") || strings.HasPrefix(mimeType, "text/") {
 		w.Header().Set("Content-Type", "application/octet-stream")
-		log.Println("Set Content-Type to application/octet-stream to force download")
 	} else {
 		w.Header().Set("Content-Type", mimeType)
 	}

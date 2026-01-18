@@ -198,10 +198,9 @@ func (s *userServ) userWorker(ctx context.Context, tx *sql.Tx, jobs <-chan model
 }
 
 func (s *userServ) imageSequenceAction(ctx context.Context, u *model.User, imgByte []byte) error {
-	photoFile := bytes.NewReader(imgByte)
 	ext := util.GetFileFormat(u.Photo)
 	mime := util.GetMimeType(u.Photo)
-	if err := util.GenerateIDCard(templatePath, util.NormalizeName(u.Name), u.ID, u.Address, fmt.Sprintf("%s%s.png", util.PathToCard, u.ID), photoFile); err != nil {
+	if err := util.GenerateIDCard(templatePath, util.NormalizeName(u.Name), u.ID, u.Address, fmt.Sprintf("%s%s.png", util.PathToCard, u.ID), bytes.NewReader(imgByte)); err != nil {
 		err = fmt.Errorf("generate ID card: %w", err)
 		return err
 	}
@@ -212,7 +211,7 @@ func (s *userServ) imageSequenceAction(ctx context.Context, u *model.User, imgBy
 	}
 
 	// Upload user photo to storage
-	if err := s.storageClient.Upload(ctx, "images/"+u.ID+"."+ext, mime, photoFile); err != nil {
+	if err := s.storageClient.Upload(ctx, "images/"+u.ID+ext, mime, bytes.NewReader(imgByte)); err != nil {
 		err = fmt.Errorf("upload photo: %w", err)
 		return err
 	}

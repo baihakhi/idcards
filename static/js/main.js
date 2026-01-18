@@ -130,7 +130,7 @@ function loadCanvas(imgSrc) {
   const img = new Image();
 
   img.crossOrigin = "anonymous";
-  img.src = "http://localhost:8080/"+imgSrc;
+  img.src = "https://"+imgSrc;
   img.onload = function () {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
